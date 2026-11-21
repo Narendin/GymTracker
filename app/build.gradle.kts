@@ -5,13 +5,24 @@ import java.util.Properties
 // чтобы публичный репозиторий его не раскрывал.
 val secrets = Properties().apply {
     val file = rootProject.file("secrets.properties")
-    if (file.exists()) file.inputStream().use { load(it) }
+    // Читаем как UTF-8: свойства по умолчанию читаются в ISO-8859-1,
+    // и кириллица в пути ключа превращается в недопустимые символы.
+    if (file.exists()) file.reader(Charsets.UTF_8).use { load(it) }
 }
 val applicationIdFromSecrets = secrets.getProperty("applicationId")
     ?: throw GradleException(
         "Не найден applicationId. Создайте secrets.properties в корне проекта " +
             "(см. secrets.properties.example) и укажите applicationId=…",
     )
+
+// Данные релизного ключа: без них релизная сборка остаётся неподписанной.
+val signingKeystore = secrets.getProperty("signing.keystore")
+val signingStorePassword = secrets.getProperty("signing.storePassword")
+val signingKeyAlias = secrets.getProperty("signing.keyAlias")
+val signingKeyPassword = secrets.getProperty("signing.keyPassword")
+val signingReady = listOf(
+    signingKeystore, signingStorePassword, signingKeyAlias, signingKeyPassword,
+).all { !it.isNullOrEmpty() }
 
 plugins {
     alias(libs.plugins.android.application)
@@ -24,12 +35,23 @@ android {
     namespace = "com.gymtracker"
     compileSdk = 35
 
+    signingConfigs {
+        if (signingReady) {
+            create("release") {
+                storeFile = file(signingKeystore)
+                storePassword = signingStorePassword
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPassword
+            }
+        }
+    }
+
     defaultConfig {
         applicationId = applicationIdFromSecrets
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -40,6 +62,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (signingReady) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
