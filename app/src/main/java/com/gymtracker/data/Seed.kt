@@ -108,9 +108,11 @@ object Seed {
             add("INSERT INTO muscle (id, name, areaId) VALUES ($id, '${esc(name)}', $areaId)")
         }
         exercises.forEach { e ->
+            // Поле isHidden (версия 2 базы) обязательно имеет значение: схема Room
+            // создаёт колонку без DEFAULT, поэтому посев задаёт его явно.
             add(
-                "INSERT INTO exercise (id, name, type, imagePath, isDeleted) " +
-                    "VALUES (${e.id}, '${esc(e.name)}', 'CATALOG', NULL, 0)"
+                "INSERT INTO exercise (id, name, type, imagePath, isDeleted, isHidden) " +
+                    "VALUES (${e.id}, '${esc(e.name)}', 'CATALOG', NULL, 0, 0)"
             )
             add(
                 "INSERT INTO exercise_muscle (exerciseId, muscleId, role) " +

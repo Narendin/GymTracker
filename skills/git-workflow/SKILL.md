@@ -62,6 +62,24 @@ description: "Git workflow for GymTracker: issue, branch, pre-commit checks, com
    (дампы uiautomator, снимки экранов, отчёты проверок) удалить, в коммит не брать.
 6. **Изменение поведения приложения проверено на эмуляторе/телефоне**
    (`emulator-5554`, установка `adb install -r`, снимок экрана).
+7. **Проверка на чистом эмуляторе — обязательна перед коммитом.**
+   Проверка поверх установленного приложения не считается: она не проверяет
+   создание базы и посев каталога. Падение при чистой установке (проверено на
+   примере: посев INSERT без поля `isHidden` — `NOT NULL constraint failed`,
+   приложение закрывалось через пару секунд) проявляетcя только на пустом месте.
+   - `adb -s <device> shell pm list packages | Select-String 'gymtracker'` —
+     приложения с id `dev.vlads.gymtracker.a74f7c77` быть не должно; если оно
+     есть, удалить: `adb -s <device> shell pm uninstall dev.vlads.gymtracker.a74f7c77`
+     (данные удаляются).
+   - Ставить без `-r`: `adb -s <device> install app\build\outputs\apk\release\app-release.apk`.
+   - Запуск: `adb -s <device> shell am start -n "dev.vlads.gymtracker.a74f7c77/com.gymtracker.MainActivity"`.
+   - Проверить, что приложение живое: `adb -s <device> shell pidof dev.vlads.gymtracker.a74f7c77`
+     дважды с интервалом (значения совпадают).
+   - Проверить лог на падение: `adb -s <device> logcat -d | Select-String 'FATAL EXCEPTION|SQLiteConstraint'`
+     — 0 совпадений.
+   - Снимок экрана: экран «Тренировка» с датой, счётчиками и вкладками.
+   - Релизный APK проверять тем же способом: он собирается тем же кодом,
+     и чистая установка — путь, которым его получит пользователь.
 
 ## Шаг 4. Коммит и push
 
