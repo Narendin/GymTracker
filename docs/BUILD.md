@@ -20,15 +20,18 @@
 `secrets.properties.example`.
 
 ```
-applicationId=dev.vlads.gymtracker.a74f7c77
-signing.keystore=C:/Users/Владимир/.keys/gymtracker-release.jks
+applicationId=<applicationId>
+signing.keystore=<путь к ключу>
 signing.storePassword=…
-signing.keyAlias=gymtracker
+signing.keyAlias=<alias>
 signing.keyPassword=…
 ```
 
 - `applicationId` обязателен: без него сборка падает с текстом
   «Не найден applicationId…».
+- Значение `applicationId` нигде не публикуется: не попадает в код,
+  документацию, тексты issue, PR и релизов. В файлах репозитория пишется
+  `<applicationId>`, значение известно только из `secrets.properties`.
 - Четыре строки `signing.*` — для подписи релиза. Без них релизный APK
   собирается неподписанным и на телефон не ставится.
 - Путь писать прямыми слэшами, файл читается как UTF-8 (иначе кириллица
@@ -57,8 +60,8 @@ $env:JAVA_HOME='C:\Users\Владимир\.jdks\jbr-21.0.11'
   app\build\outputs\apk\release\app-release.apk
 ```
 
-Должно быть: имя пакета `dev.vlads.gymtracker.a74f7c77`, SHA-1 релизного
-ключа. У неподписанного APK — `DOES NOT VERIFY`.
+Должно быть: имя пакета `<applicationId>` (значение из `secrets.properties`),
+SHA-1 релизного ключа. У неподписанного APK — `DOES NOT VERIFY`.
 
 ## Установка на эмулятор или телефон
 
@@ -71,11 +74,11 @@ $env:JAVA_HOME='C:\Users\Владимир\.jdks\jbr-21.0.11'
 
 ```
 & "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" -s emulator-5554 shell `
-  am start -n "dev.vlads.gymtracker.a74f7c77/com.gymtracker.MainActivity"
+  am start -n "<applicationId>/com.gymtracker.MainActivity"
 ```
 
 Имя компонента состоит из `applicationId` и пакета кода: код лежит в
-`com.gymtracker`, а приложение на телефоне — `dev.vlads.gymtracker.a74f7c77`.
+`com.gymtracker`, а приложение на телефоне — `<applicationId>`.
 
 Правила:
 - `-r` ставит поверх, сохраняя данные: тот же `applicationId` и та же подпись.
