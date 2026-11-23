@@ -45,6 +45,8 @@ data class SessionUi(
 data class WorkoutUiState(
     val todayLabel: String,
     val lastWorkoutLabel: String? = null,
+    /** id последней завершённой тренировки — счётчик A1 ведёт в её детали (B2). */
+    val lastSessionId: Long? = null,
     val count30: Int = 0,
     val totalCount: Int = 0,
     val session: SessionUi? = null,
@@ -117,6 +119,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                         WorkoutUiState(
                             todayLabel = today,
                             lastWorkoutLabel = lastLabel,
+                            lastSessionId = base.last?.id,
                             count30 = base.c30,
                             totalCount = base.total,
                             session = null,

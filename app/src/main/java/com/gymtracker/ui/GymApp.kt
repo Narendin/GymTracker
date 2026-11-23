@@ -160,6 +160,16 @@ fun GymApp(container: AppContainer) {
                         vm = container.workoutsVm,
                         onOpenPicker = { nav.add(Nav.Picker) },
                         onOpenExercise = { id -> pushCard(id, "← Тренировка") },
+                        // Счётчики A1: таб «Журнал» добавляем в стек, фильтр выставляем до перехода,
+                        // «Назад» возвращает на A1, состояние вкладки не сбрасывается.
+                        onOpenLastWorkout = { sessionId ->
+                            if (nav.last() != Nav.Tab(AppTab.HISTORY)) nav.add(Nav.Tab(AppTab.HISTORY))
+                            openDetail(sessionId)
+                        },
+                        onOpenHistory = { filter ->
+                            container.historyVm.setFilter(filter)
+                            if (nav.last() != Nav.Tab(AppTab.HISTORY)) nav.add(Nav.Tab(AppTab.HISTORY))
+                        },
                     )
                     AppTab.HISTORY -> HistoryScreen(
                         vm = container.historyVm,

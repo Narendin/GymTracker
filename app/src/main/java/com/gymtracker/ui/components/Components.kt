@@ -27,16 +27,27 @@ import coil.compose.AsyncImage
 import com.gymtracker.ui.theme.LocalGymPalette
 import java.io.File
 
-/** Строка счётчика A1: label + значение справа, акцент, высота 56. */
+/**
+ * Строка счётчика A1: label + значение справа, акцент, высота 56.
+ * С [onClick] — кнопка перехода: строка кликабельна, справа шеврон.
+ */
 @Composable
-fun StatRow(label: String, value: String, modifier: Modifier = Modifier) {
+fun StatRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null,
+    enabled: Boolean = true,
+) {
     val palette = LocalGymPalette.current
+    val clickable = onClick != null && enabled
     Row(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(palette.panel)
+            .then(if (clickable) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -48,6 +59,14 @@ fun StatRow(label: String, value: String, modifier: Modifier = Modifier) {
             fontWeight = FontWeight.SemiBold,
             color = palette.accent,
         )
+        if (clickable) {
+            Text(
+                "›",
+                fontSize = 17.sp,
+                color = palette.muted,
+                modifier = Modifier.padding(start = 8.dp),
+            )
+        }
     }
 }
 
