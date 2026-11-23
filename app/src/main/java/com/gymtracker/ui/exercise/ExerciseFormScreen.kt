@@ -33,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -43,6 +44,13 @@ import com.gymtracker.ui.components.PrimaryButton
 import com.gymtracker.ui.components.ScreenTitle
 import com.gymtracker.ui.theme.LocalGymPalette
 import java.io.File
+
+/** testTag для автотестов (issue #11). */
+const val TAG_FORM_NAME = "form_name"
+const val TAG_FORM_CHIP = "form_chip"
+const val TAG_ADD_PRIMARY = "add_primary"
+const val TAG_ADD_SECONDARY = "add_secondary"
+const val TAG_SAVE = "form_save"
 
 /** C2/C3c — форма упражнения: фото, название, основные и вторичные мышцы, «Сохранить». */
 @Composable
@@ -111,6 +119,7 @@ fun ExerciseFormScreen(
             androidx.compose.foundation.text.BasicTextField(
                 value = state.name,
                 onValueChange = { vm.setFormName(it) },
+                modifier = Modifier.testTag(TAG_FORM_NAME),
                 singleLine = true,
                 textStyle = TextStyle(fontSize = 16.sp, color = palette.text),
                 cursorBrush = androidx.compose.ui.graphics.SolidColor(palette.accent),
@@ -138,6 +147,7 @@ fun ExerciseFormScreen(
                 selectedIds = state.primaryIds,
                 allMuscles = state.allMuscles.map { it.id to it.name },
                 accentFill = true,
+                addTag = TAG_ADD_PRIMARY,
                 onToggle = { vm.togglePrimary(it) },
                 onAdd = { showPicker = Picker.Primary },
             )
@@ -147,6 +157,7 @@ fun ExerciseFormScreen(
                 selectedIds = state.secondaryIds,
                 allMuscles = state.allMuscles.map { it.id to it.name },
                 accentFill = false,
+                addTag = TAG_ADD_SECONDARY,
                 onToggle = { vm.toggleSecondary(it) },
                 onAdd = { showPicker = Picker.Secondary },
             )
@@ -157,6 +168,7 @@ fun ExerciseFormScreen(
                     vm.saveForm()
                     onSaved()
                 },
+                modifier = Modifier.testTag(TAG_SAVE),
                 enabled = state.name.isNotBlank(),
             )
             Spacer(Modifier.height(16.dp))
@@ -210,6 +222,7 @@ private fun MuscleSection(
     selectedIds: List<Long>,
     allMuscles: List<Pair<Long, String>>,
     accentFill: Boolean,
+    addTag: String,
     onToggle: (Long) -> Unit,
     onAdd: () -> Unit,
 ) {
@@ -229,6 +242,7 @@ private fun MuscleSection(
             Box(
                 Modifier
                     .height(34.dp)
+                    .testTag(TAG_FORM_CHIP)
                     .clip(RoundedCornerShape(17.dp))
                     .background(if (accentFill) palette.accent else palette.panel2)
                     .clickable { onToggle(id) }
@@ -246,6 +260,7 @@ private fun MuscleSection(
         Box(
             Modifier
                 .height(34.dp)
+                .testTag(addTag)
                 .clip(RoundedCornerShape(17.dp))
                 .background(palette.panel2)
                 .clickable(onClick = onAdd)

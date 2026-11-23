@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.rememberTextMeasurer
@@ -61,6 +62,11 @@ import com.gymtracker.util.formatDateFull
 import com.gymtracker.util.formatWeight
 import java.io.File
 import kotlin.math.max
+
+/** testTag для автотестов (issue #11). */
+const val TAG_EDIT = "exercise_edit"
+const val TAG_CARD_HISTORY_ROW = "card_history_row"
+const val TAG_DELETE = "exercise_delete"
 
 /** C3 — карточка упражнения: фото, мышцы цветом, график, история, удаление. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -90,6 +96,7 @@ fun ExerciseCardScreen(
             Box(
                 Modifier
                     .size(40.dp)
+                    .testTag(TAG_EDIT)
                     .clip(CircleShape)
                     .clickable(onClick = onEdit),
                 contentAlignment = Alignment.Center,
@@ -172,6 +179,7 @@ fun ExerciseCardScreen(
                 Column(
                     Modifier
                         .fillMaxWidth()
+                        .testTag(TAG_CARD_HISTORY_ROW)
                         .clip(RoundedCornerShape(12.dp))
                         .background(palette.panel)
                         .clickable { onOpenSession(row.sessionId) }
@@ -190,7 +198,11 @@ fun ExerciseCardScreen(
             }
 
             Spacer(Modifier.height(10.dp))
-            DangerSmallButton("Удалить упражнение", onClick = { vm.requestDelete() })
+            DangerSmallButton(
+                "Удалить упражнение",
+                onClick = { vm.requestDelete() },
+                modifier = Modifier.testTag(TAG_DELETE),
+            )
             Spacer(Modifier.height(16.dp))
         }
     }

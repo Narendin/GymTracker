@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -50,6 +51,16 @@ import com.gymtracker.ui.theme.LocalGymPalette
 import com.gymtracker.util.exercisesLabel
 import com.gymtracker.util.formatWeight
 import com.gymtracker.util.workoutsLabel
+
+/**
+ * testTag для автотестов (issue #11): элементы находятся по тегу и тексту,
+ * координаты не используются. Теги — часть основного кода.
+ */
+const val TAG_LAST = "last_workout"
+const val TAG_MONTH = "count_30"
+const val TAG_TOTAL = "total_workouts"
+const val TAG_REPS = "reps_input"
+const val TAG_WEIGHT = "weight_input"
 
 /** Экран «Тренировка»: A1 — нет активной сессии; A2/A3/A3a — сессия. */
 @Composable
@@ -90,10 +101,21 @@ fun WorkoutScreen(
                 StatRow(
                     "Последняя тренировка",
                     state.lastWorkoutLabel ?: "—",
+                    modifier = Modifier.testTag(TAG_LAST),
                     onClick = lastId?.let { id -> { onOpenLastWorkout(id) } },
                 )
-                StatRow("За 30 дней", workoutsLabel(state.count30), onClick = { onOpenHistory(PeriodFilter.MONTH) })
-                StatRow("Всего тренировок", state.totalCount.toString(), onClick = { onOpenHistory(PeriodFilter.ALL) })
+                StatRow(
+                    "За 30 дней",
+                    workoutsLabel(state.count30),
+                    modifier = Modifier.testTag(TAG_MONTH),
+                    onClick = { onOpenHistory(PeriodFilter.MONTH) },
+                )
+                StatRow(
+                    "Всего тренировок",
+                    state.totalCount.toString(),
+                    modifier = Modifier.testTag(TAG_TOTAL),
+                    onClick = { onOpenHistory(PeriodFilter.ALL) },
+                )
                 Spacer(Modifier.height(6.dp))
                 PrimaryButton("Начать тренировку", onClick = { vm.startSession() })
             } else if (session.blocks.isEmpty()) {
@@ -219,6 +241,7 @@ private fun ExerciseBlockCard(
                         value = session.repsInput,
                         onValueChange = { vm.setRepsInput(it) },
                         accentBorder = false,
+                        testTag = TAG_REPS,
                         modifier = Modifier.weight(1f),
                     )
                     NumericField(
@@ -226,6 +249,7 @@ private fun ExerciseBlockCard(
                         value = session.weightInput,
                         onValueChange = { vm.setWeightInput(it) },
                         accentBorder = session.weightPrefilled,
+                        testTag = TAG_WEIGHT,
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -245,6 +269,7 @@ private fun NumericField(
     value: String,
     onValueChange: (String) -> Unit,
     accentBorder: Boolean,
+    testTag: String,
     modifier: Modifier = Modifier,
 ) {
     val palette = LocalGymPalette.current
@@ -270,6 +295,7 @@ private fun NumericField(
             ),
             cursorBrush = SolidColor(palette.accent),
             modifier = Modifier
+                .testTag(testTag)
                 .fillMaxWidth()
                 .height(54.dp)
                 .clip(RoundedCornerShape(9.dp))

@@ -111,5 +111,13 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
 
+    androidTestImplementation(platform(libs.androidx.compose.bom))
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    // Espresso 3.5/3.6 не работает на API 36 (InputManager.getInstance удалён) — нужен 3.7+.
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
+    debugImplementation("androidx.compose.ui:ui-test-manifest")
+
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

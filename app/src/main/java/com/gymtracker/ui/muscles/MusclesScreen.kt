@@ -27,14 +27,24 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gymtracker.ui.components.ExerciseThumb
 import com.gymtracker.ui.components.OutlinedButton
 import com.gymtracker.ui.components.ScreenTitle
 import com.gymtracker.ui.theme.LocalGymPalette
+
+/** testTag для автотестов (issue #11). */
+const val TAG_MUSCLE = "muscle_chip"
+const val TAG_MUSCLE_ROW = "muscle_row"
+const val TAG_EYE = "eye"
+const val TAG_HIDDEN_HEADER = "hidden_header"
+const val TAG_ADD_EXERCISE = "add_exercise"
 
 /** C1. Мышцы — аккордеон областей; открыта одна область, выбрана одна мышца. */
 @Composable
@@ -90,6 +100,8 @@ fun MusclesScreen(
                                 Box(
                                     Modifier
                                         .clip(RoundedCornerShape(15.dp))
+                                        .testTag(TAG_MUSCLE)
+                                        .semantics { selected = muscle.selected }
                                         .background(if (muscle.selected) palette.accent else palette.panel2)
                                         .clickable { vm.selectMuscle(muscle.id) }
                                         .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -129,7 +141,11 @@ fun MusclesScreen(
                             }
                         }
                         Column(Modifier.padding(start = 10.dp, end = 10.dp, bottom = 10.dp)) {
-                            OutlinedButton("Добавить упражнение", onClick = onAddExercise)
+                            OutlinedButton(
+                                "Добавить упражнение",
+                                onClick = onAddExercise,
+                                modifier = Modifier.testTag(TAG_ADD_EXERCISE),
+                            )
                         }
                     }
                 }
@@ -154,6 +170,7 @@ private fun ExerciseRow(
     Row(
         Modifier
             .fillMaxWidth()
+            .testTag(TAG_MUSCLE_ROW)
             .clickable { onOpen() }
             .padding(start = 12.dp, end = 4.dp, top = 6.dp, bottom = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -182,6 +199,7 @@ private fun EyeButton(hidden: Boolean, onClick: () -> Unit, tint: Color) {
     Box(
         Modifier
             .size(40.dp)
+            .testTag(TAG_EYE)
             .clip(CircleShape)
             .clickable(onClick = onClick)
             .padding(10.dp),
@@ -211,6 +229,7 @@ private fun HiddenSectionHeader(count: Int, expanded: Boolean, onToggle: () -> U
         Row(
             Modifier
                 .fillMaxWidth()
+                .testTag(TAG_HIDDEN_HEADER)
                 .clickable(onClick = onToggle)
                 .padding(top = 8.dp, bottom = 8.dp),
             verticalAlignment = Alignment.CenterVertically,

@@ -26,6 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -34,6 +37,10 @@ import com.gymtracker.ui.components.BackHeader
 import com.gymtracker.ui.components.ExerciseThumb
 import com.gymtracker.ui.components.ScreenTitle
 import com.gymtracker.ui.theme.LocalGymPalette
+
+/** testTag для автотестов (issue #11): поле поиска и строки списка выбора. */
+const val TAG_SEARCH = "picker_search"
+const val TAG_PICK_ROW = "pick_row"
 
 /** A4. Выбор упражнения (вложенный из A2/A3): тап возвращает активным блоком. */
 @OptIn(ExperimentalLayoutApi::class)
@@ -63,6 +70,7 @@ fun ExercisePickerScreen(vm: PickerViewModel, onBack: () -> Unit) {
                 textStyle = TextStyle(fontSize = 15.sp, color = palette.text),
                 cursorBrush = SolidColor(palette.accent),
                 modifier = Modifier
+                    .testTag(TAG_SEARCH)
                     .fillMaxWidth()
                     .padding(horizontal = 14.dp)
                     .align(Alignment.CenterEnd)
@@ -116,6 +124,8 @@ private fun PickerChip(label: String, active: Boolean, onClick: () -> Unit) {
     val palette = LocalGymPalette.current
     Box(
         Modifier
+            // Признак выбора — часть семантики: автотест проверяет выбранный фильтр (issue #11).
+            .semantics { selected = active }
             .clip(RoundedCornerShape(17.dp))
             .background(if (active) palette.accent else palette.panel2)
             .clickable(onClick = onClick)
@@ -130,6 +140,7 @@ private fun PickRowCard(row: PickRowUi, onClick: () -> Unit) {
     val palette = LocalGymPalette.current
     Row(
         Modifier
+            .testTag(TAG_PICK_ROW)
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(palette.panel)
