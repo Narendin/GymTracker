@@ -61,6 +61,10 @@ description: "Git workflow for GymTracker: issue, branch, pre-commit checks, com
    - `secrets.properties` (значение `applicationId`, пароли, путь к ключу),
    - `*.jks`, `*.keystore`, `keystore/`,
    - `local.properties`, `build/`, `shots/`, `.idea`.
+    - **`applicationId` не публикуется никогда**: значение известно только из
+      `secrets.properties`, в файлах репозитория пишется `<applicationId>`,
+      в тексты issue, PR и релизов оно тоже не попадает. Так же — путь к
+      ключу, alias и пароли; отпечатки ключей в документации не пишутся.
    Контроль:
    `git status --short` и
    `git grep -I -n <значение applicationId>` — 0 совпадений в файлах,
@@ -75,12 +79,12 @@ description: "Git workflow for GymTracker: issue, branch, pre-commit checks, com
    примере: посев INSERT без поля `isHidden` — `NOT NULL constraint failed`,
    приложение закрывалось через пару секунд) проявляетcя только на пустом месте.
    - `adb -s <device> shell pm list packages | Select-String 'gymtracker'` —
-     приложения с id `dev.vlads.gymtracker.a74f7c77` быть не должно; если оно
-     есть, удалить: `adb -s <device> shell pm uninstall dev.vlads.gymtracker.a74f7c77`
+     приложения с id `<applicationId>` быть не должно; если оно
+     есть, удалить: `adb -s <device> shell pm uninstall <applicationId>`
      (данные удаляются).
    - Ставить без `-r`: `adb -s <device> install app\build\outputs\apk\release\app-release.apk`.
-   - Запуск: `adb -s <device> shell am start -n "dev.vlads.gymtracker.a74f7c77/com.gymtracker.MainActivity"`.
-   - Проверить, что приложение живое: `adb -s <device> shell pidof dev.vlads.gymtracker.a74f7c77`
+   - Запуск: `adb -s <device> shell am start -n "<applicationId>/com.gymtracker.MainActivity"`.
+   - Проверить, что приложение живое: `adb -s <device> shell pidof <applicationId>`
      дважды с интервалом (значения совпадают).
    - Проверить лог на падение: `adb -s <device> logcat -d | Select-String 'FATAL EXCEPTION|SQLiteConstraint'`
      — 0 совпадений.

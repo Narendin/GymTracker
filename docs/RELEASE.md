@@ -46,9 +46,10 @@ $env:JAVA_HOME='C:\Users\Владимир\.jdks\jbr-21.0.11'; ./gradlew.bat :app
 ```
 
 Проверить, что:
-- имя пакета `dev.vlads.gymtracker.a74f7c77` (из `secrets.properties`);
+- имя пакета `<applicationId>` (значение из `secrets.properties`);
 - `versionCode` и `versionName` — новые;
-- SHA-1 подписи — релизного ключа, а не debug (`46:E3:D1:6D:9C:90:2E:BD:5F:8C:AD:3B:B2:CC:1E:61:F4:37:BE:2C`).
+- SHA-1 подписи — релизного ключа, а не debug (отпечаток debug-ключа в
+  документации не пишется, он берётся из `./gradlew.bat :app:signingReport`).
 
 Поставить на устройство:
 
@@ -91,7 +92,7 @@ Personal access tokens, с правом `repo`) или SSH-ключ. Первы�
 ## Правила
 
 - `versionCode` только растёт; задним числом не правится.
-- Релизный ключ (`C:\Users\Владимир\.keys\gymtracker-release.jks`) —
+- Релизный ключ (файл `<.jks>`, путь из `secrets.properties`) —
   пожизненно: без него обновления того же приложения выпустить нельзя.
   Он не в репозитории, не передаётся, пароли в `secrets.properties`.
 - В репозиторий не попадают: `build/`, `local.properties`,
