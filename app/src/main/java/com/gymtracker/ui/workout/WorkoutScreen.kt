@@ -45,6 +45,7 @@ import com.gymtracker.ui.components.ScreenSub
 import com.gymtracker.ui.components.ScreenTitle
 import com.gymtracker.ui.components.SetChip
 import com.gymtracker.ui.components.StatRow
+import com.gymtracker.ui.history.PeriodFilter
 import com.gymtracker.ui.theme.LocalGymPalette
 import com.gymtracker.util.exercisesLabel
 import com.gymtracker.util.formatWeight
@@ -56,6 +57,9 @@ fun WorkoutScreen(
     vm: WorkoutsViewModel,
     onOpenPicker: () -> Unit,
     onOpenExercise: (Long) -> Unit,
+    /** Счётчики A1 — переходы в Журнал: детали последней тренировки и фильтр периода. */
+    onOpenLastWorkout: (Long) -> Unit = { },
+    onOpenHistory: (PeriodFilter) -> Unit = { },
 ) {
     val state by vm.uiState.collectAsState()
     val palette = LocalGymPalette.current
@@ -80,10 +84,16 @@ fun WorkoutScreen(
         ) {
             if (session == null) {
                 // A1. Нет активной сессии: счётчики, которые реально меняются, и кнопка старта.
+                // Счётчики — кнопки перехода в Журнал; без тренировок «Последняя тренировка» неактивна.
                 Spacer(Modifier.height(6.dp))
-                StatRow("Последняя тренировка", state.lastWorkoutLabel ?: "—")
-                StatRow("За 30 дней", workoutsLabel(state.count30))
-                StatRow("Всего тренировок", state.totalCount.toString())
+                val lastId = state.lastSessionId
+                StatRow(
+                    "Последняя тренировка",
+                    state.lastWorkoutLabel ?: "—",
+                    onClick = lastId?.let { id -> { onOpenLastWorkout(id) } },
+                )
+                StatRow("За 30 дней", workoutsLabel(state.count30), onClick = { onOpenHistory(PeriodFilter.MONTH) })
+                StatRow("Всего тренировок", state.totalCount.toString(), onClick = { onOpenHistory(PeriodFilter.ALL) })
                 Spacer(Modifier.height(6.dp))
                 PrimaryButton("Начать тренировку", onClick = { vm.startSession() })
             } else if (session.blocks.isEmpty()) {
