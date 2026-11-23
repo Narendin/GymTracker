@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,9 @@ import com.gymtracker.ui.settings.SettingsScreen
 import com.gymtracker.ui.theme.LocalGymPalette
 import com.gymtracker.ui.workout.ExercisePickerScreen
 import com.gymtracker.ui.workout.WorkoutScreen
+
+/** testTag для автотестов (issue #11): табы — по порядку (0..4), порядок = AppTab. */
+const val TAG_TAB = "tab"
 
 /** Пять верхних экранов; пункты таб-панели — иконки без текста. */
 enum class AppTab(val label: String) {
@@ -212,6 +216,7 @@ fun GymBottomBar(tab: AppTab, onSelect: (AppTab) -> Unit) {
                 val active = t == tab
                 Box(
                     Modifier
+                        .testTag(TAG_TAB)
                         .weight(1f)
                         .fillMaxHeight()
                         .clickable { onSelect(t) },

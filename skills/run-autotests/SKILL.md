@@ -1,0 +1,129 @@
+---
+name: run-autotests
+description: "Running GymTracker instrumented UI autotests on a device/emulator: emulator restart, data clear, background Gradle run, progress polling, reading the XML report, clean-install check. Use before any commit that touches app code, and for any request to run autotests."
+---
+
+# Прогон автотестов GymTracker
+
+Инструментальные тесты — `app/src/androidTest` (`AppFlowTest`), 15 методов по
+нарастанию имён, состояние накапливается от пустой базы. Команды сборки и
+ловушки — `docs/BUILD.md`, раздел «Автотесты интерфейса».
+
+## Железные правила
+
+1. **Перед прогоном очищать данные приложения.** Первый метод стартует с
+   пустой базы; без очистки тесты падают каскадом.
+2. **Прогон — фоновое задание с выводом в файл.** Конвейер с `Select-String`
+   в конце буферизует вывод до конца Gradle: чтение такого задания висит.
+3. **Опрос — короткие вызовы, а не длинный цикл.** Цикл внутри одной команды
+   печатает всё в конце хода одним блоком. Каждый опрос — отдельный вызов с
+   `timeoutMs` 20000, интервал 15 секунд.
+4. **Завершение проверять по строке BUILD в последних 3 строках лога**, не по
+   последней строке: после завершения последней строкой становится
+   `70 actionable tasks: ...`.
+5. **Печатать только изменившуюся строку** — иначе одна и та же строка
+   повторяется несколько опросов.
+6. **Сабагент не нужен**, когда больше ничего не делаешь: он добавляет
+   оформление отчёта и минуты простоя. Он нужен, только если опрос должен
+   идти параллельно с другой работой.
+7. **Коммит — только по явному указанию пользователя** (`git-workflow`).
+
+## Шаг 1. Эмулятор
+
+Свежезапущенный эмулятор — самый быстрый: прогон 15 тестов занимает 1,5–2
+минуты. После долгой серии прогонов эмулятор деградирует (тесты по 20–35
+секунд), и перезапуск быстрее, чем «прогреть и прогнать».
+
+- **Serial известен из запуска.** `as_avd_start` возвращает `booted_serial` —
+  это и есть `<device>`, угадывать не нужно.
+- **Если эмулятор уже запущен кем-то другим**, соответствие serial → AVD
+  узнаётся запросом к консоли: `& $adb -s <serial> emu avd name` возвращает
+  имя AVD. В `adb devices -l` имени AVD нет: там `model`/`product` — кодname
+  (`sdk_gphone64_x86_64`), по нему AVD не опознаётся.
+- adb выдаёт эмуляторам `emulator-5554`, `emulator-5556`, `emulator-5558`… по
+  порядку запуска: один эмулятор почти всегда `5554`, второй — `5556`.
+  Устройств больше одного — спросить пользователя, какое брать. В командах
+  ниже `<device>` — этот serial.
+- Перезапуск: остановить найденный serial, запустить AVD `Medium_Phone_API_37.0`
+  с `wait_boot: true`. Окно нужно — `headless: false`; автотестам окно не
+  нужно, но без него нет UI.
+- Полный путь adb (его нет в PATH):
+  `C:\Users\Владимир\AppData\Local\Android\Sdk\platform-tools\adb.exe`.
+
+## Шаг 2. Очистка данных
+
+```
+& $adb -s <device> shell pm clear <applicationId>
+```
+Значение `applicationId` — из `secrets.properties`, в командах пишется
+`<applicationId>`. `Failed` здесь нормально: приложение может не быть
+установлено, тестовый прогон установит APK сам.
+
+## Шаг 3. Прогон
+
+```
+$env:JAVA_HOME='C:\Users\Владимир\.jdks\jbr-21.0.11'
+.\gradlew.bat :app:connectedDebugAndroidTest --console=plain *> poll.log
+```
+Запускать как фоновое задание. JDK 21 обязателен: Java 25 Gradle 8.7 не
+понимает. Gradle гоняет на **всех** подключённых устройствах, `adb -s` его не
+ограничивает: перед прогоном должно быть одно устройство.
+
+## Шаг 4. Опрос
+
+Каждый опрос — отдельный вызов:
+```
+Start-Sleep -Seconds 15
+Get-Content poll.log -Tail 3 -ErrorAction SilentlyContinue
+```
+Сравнивать с предыдущим наблюдением, печатать только изменение. Строка
+прогресса: `Tests N/15 completed. (0 skipped) (0 failed)`. Выход, когда в
+последних 3 строках есть `BUILD SUCCESSFUL` или `BUILD FAILED`.
+
+## Шаг 5. Отчёт
+
+```
+$f = Get-ChildItem app\build\outputs\androidTest-results -Recurse -Filter *.xml | Select-Object -First 1
+Get-Content $f.FullName | Select-String 'testsuite name'
+```
+В строке `testsuite`: `tests`, `failures`, `errors`, `skipped`, `time`.
+При падениях — имена методов и строки `AppFlowTest.kt:N` из `<failure>`.
+Время Gradle (сборка + установка) и время тестов — разные числа.
+
+`poll.log` удалить: в коммит он не идёт.
+
+## Шаг 6. Проверка на чистом эмуляторе
+
+Перед коммитом обязательна (`git-workflow`): проверка поверх установленного
+приложения не проверяет создание базы и посев каталога.
+
+```
+& $adb -s <device> shell pm list packages | Select-String 'gymtracker'
+& $adb -s <device> uninstall <applicationId>
+& $adb -s <device> install app\build\outputs\apk\debug\app-debug.apk
+& $adb -s <device> shell am start -n "<applicationId>/com.gymtracker.MainActivity"
+& $adb -s <device> shell pidof <applicationId>   # дважды, значения совпадают
+& $adb -s <device> logcat -d | Select-String 'FATAL EXCEPTION|SQLiteConstraint'  # 0 совпадений
+```
+Снимок экрана: экран «Тренировка» с датой, счётчиками и вкладками. Первым
+кадром приходит заставка — снимать после 8 секунд.
+
+## Ловушки
+
+- **Espresso 3.7+ обязателен**: 3.5/3.6 падают на API 36
+  (`NoSuchMethodException: InputManager.getInstance`).
+- **Ожидания 30 секунд**: на нагруженном эмуляторе 10-секундные ожидания не
+  успевают за чтением из Room — `ComposeTimeoutException`.
+- **Состояние ViewModel живёт между методами**: открытая область аккордеона,
+  выбранный фильтр, скрытые упражнения. Первый тап по заголовку области может
+  свернуть уже открытую область.
+- **Лист (`ModalBottomSheet`) не прокручивается через `performScrollTo`**:
+  элемент ниже сгиба есть в дереве, но не видим. Тап по элементу из видимой
+  части листа.
+- **Юнит-тесты (`:app:test`) падают на `GradleWorkerMain`** — это среда, не
+  код. Проверка кода — `:app:assembleDebug`.
+- **`connectedDebugAndroidTest` не принимает `--tests`**; один метод —
+  `-Pandroid.testInstrumentationRunnerArguments.class=...#method`.
+- **Сталые результаты в `app\build\outputs\androidTest-results`** ломают
+  задачу (`Failed to create MD5 hash for file content`) — удалить каталог и
+  прогнать заново.

@@ -25,6 +25,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -39,6 +42,9 @@ import com.gymtracker.ui.components.ScreenTitle
 import com.gymtracker.ui.components.SetChip
 import com.gymtracker.ui.components.TextConfirmDialog
 import com.gymtracker.ui.theme.LocalGymPalette
+
+/** testTag для автотестов (issue #11): строка журнала; порядок строк — по дате (свежая сверху). */
+const val TAG_ROW = "journal_row"
 
 /**
  * B1 — Журнал; B2 — детали тренировки.
@@ -136,6 +142,8 @@ private fun PeriodChip(label: String, filter: PeriodFilter, current: PeriodFilte
     val active = filter == current
     Box(
         Modifier
+            // Признак выбора — часть семантики: автотест проверяет выбранный фильтр (issue #11).
+            .semantics { selected = active }
             .clip(RoundedCornerShape(17.dp))
             .background(if (active) palette.accent else palette.panel2)
             .clickable { vm.setFilter(filter) }
@@ -154,6 +162,7 @@ private fun HistoryRowCard(row: HistoryRowUi, onClick: () -> Unit) {
     val palette = LocalGymPalette.current
     Column(
         Modifier
+            .testTag(TAG_ROW)
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .background(palette.panel)
