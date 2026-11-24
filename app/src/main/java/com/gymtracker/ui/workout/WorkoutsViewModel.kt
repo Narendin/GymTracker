@@ -52,7 +52,7 @@ data class WorkoutUiState(
     val session: SessionUi? = null,
     val showFinishConfirm: Boolean = false,
     val noSetsBlockId: Long? = null,
-    /** Issue #6: диалог правки подхода. */
+    /** Диалог правки подхода. */
     val editSetBlockId: Long? = null,
     val editSetId: Long? = null,
     val editWeight: String = "",
@@ -89,7 +89,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     private val weightPrefilled = MutableStateFlow(true)
     private val finishConfirm = MutableStateFlow(false)
     private val noSetsBlockId = MutableStateFlow<Long?>(null)
-    // Issue #6: состояние диалога правки подхода.
+    // Состояние диалога правки подхода.
     private val editBlockId = MutableStateFlow<Long?>(null)
     private val editSetId = MutableStateFlow<Long?>(null)
     private val editWeight = MutableStateFlow("")
@@ -296,7 +296,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
         finishConfirm.value = false
     }
 
-    // ——— Issue #6: правка и удаление подхода ———
+    // ——— Правка и удаление подхода ———
 
     /** Открыть диалог правки: подставить текущие значения подхода. */
     fun openEditSet(blockId: Long, setId: Long, weightKg: Double, reps: Int) {

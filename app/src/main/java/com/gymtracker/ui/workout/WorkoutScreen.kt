@@ -55,7 +55,7 @@ import com.gymtracker.util.formatWeight
 import com.gymtracker.util.workoutsLabel
 
 /**
- * testTag для автотестов (issue #11): элементы находятся по тегу и тексту,
+ * testTag для автотестов: элементы находятся по тегу и тексту,
  * координаты не используются. Теги — часть основного кода.
  */
 const val TAG_LAST = "last_workout"
@@ -172,7 +172,7 @@ fun WorkoutScreen(
             onSecondary = { vm.continueExercise() },
         )
     }
-    // Issue #6: диалог правки подхода.
+    // Диалог правки подхода.
     if (state.editSetId != null) {
         EditSetDialog(vm, state)
     }
@@ -274,7 +274,7 @@ private fun ExerciseBlockCard(
 }
 
 /**
- * Диалог правки подхода (issue #6): поля «Вес» и «Повторы», кнопки «Сохранить»,
+ * Диалог правки подхода: поля «Вес» и «Повторы», кнопки «Сохранить»,
  * «Удалить», «Отмена».
  *
  * Состояние приходит параметром из наблюдаемого `collectAsState()` экрана.

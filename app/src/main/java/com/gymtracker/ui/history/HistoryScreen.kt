@@ -43,7 +43,7 @@ import com.gymtracker.ui.components.SetChip
 import com.gymtracker.ui.components.TextConfirmDialog
 import com.gymtracker.ui.theme.LocalGymPalette
 
-/** testTag для автотестов (issue #11): строка журнала; порядок строк — по дате (свежая сверху). */
+/** testTag для автотестов: строка журнала; порядок строк — по дате (свежая сверху). */
 const val TAG_ROW = "journal_row"
 
 /**
@@ -142,7 +142,7 @@ private fun PeriodChip(label: String, filter: PeriodFilter, current: PeriodFilte
     val active = filter == current
     Box(
         Modifier
-            // Признак выбора — часть семантики: автотест проверяет выбранный фильтр (issue #11).
+            // Признак выбора — часть семантики: автотест проверяет выбранный фильтр.
             .semantics { selected = active }
             .clip(RoundedCornerShape(17.dp))
             .background(if (active) palette.accent else palette.panel2)

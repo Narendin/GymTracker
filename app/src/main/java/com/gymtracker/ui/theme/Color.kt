@@ -2,7 +2,7 @@ package com.gymtracker.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Палитра мокапа (docs/mockups-mvp.html):
+// Палитра мокапа:
 // --bg #15171b, --panel #1d2026, --panel2 #232730, --text #e9ecef,
 // --muted #8b93a1, --accent #2ec4a0, --accentDark #1b8f74, --line #2b3039
 val GymBg = Color(0xFF15171B)
