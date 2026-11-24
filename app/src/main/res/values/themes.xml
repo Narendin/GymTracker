@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <style name="Theme.GymTracker" parent="android:Theme.Material.NoActionBar">
+        <!-- Цвет системных баров совпадает с фоном приложения:
+             enableEdgeToEdge делает бары прозрачными, эти цвета задают
+             первый кадр до рисования Compose — без вспышки другого цвета. -->
         <item name="android:windowBackground">@color/gym_window_bg</item>
         <item name="android:statusBarColor">@color/gym_window_bg</item>
+        <item name="android:navigationBarColor">@color/gym_window_bg</item>
     </style>
 </resources>

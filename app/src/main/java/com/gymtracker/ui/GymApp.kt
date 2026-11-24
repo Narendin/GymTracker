@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
@@ -49,7 +50,7 @@ import com.gymtracker.ui.theme.LocalGymPalette
 import com.gymtracker.ui.workout.ExercisePickerScreen
 import com.gymtracker.ui.workout.WorkoutScreen
 
-/** testTag для автотестов (issue #11): табы — по порядку (0..4), порядок = AppTab. */
+/** testTag для автотестов: табы — по порядку (0..4), порядок = AppTab. */
 const val TAG_TAB = "tab"
 
 /** Пять верхних экранов; пункты таб-панели — иконки без текста. */
@@ -197,7 +198,14 @@ fun GymApp(container: AppContainer) {
     }
 }
 
-/** Таб-панель: индикатор активной вкладки — акцентная линия над иконкой. */
+/**
+ * Таб-панель: индикатор активной вкладки — акцентная линия над иконкой.
+ *
+ * Панель занимает слот `bottomBar` без отступов, поэтому отступ системных
+ * кнопок применяем здесь — `navigationBarsPadding()`. При 3-кнопочной
+ * навигации панель встаёт над кнопками, при жестовой inset = 0 и панель
+ * прижата к нижней границе. Фон Scaffold продолжается под бары.
+ */
 @Composable
 fun GymBottomBar(tab: AppTab, onSelect: (AppTab) -> Unit) {
     val palette = LocalGymPalette.current
@@ -209,7 +217,7 @@ fun GymBottomBar(tab: AppTab, onSelect: (AppTab) -> Unit) {
         AppTab.CHANGES to Icons.Outlined.Accessibility,
         AppTab.SETTINGS to Icons.Outlined.Settings,
     )
-    Column {
+    Column(Modifier.navigationBarsPadding()) {
         Box(Modifier.fillMaxWidth().height(1.dp).background(palette.line))
         Row(Modifier.fillMaxWidth().height(66.dp)) {
             items.forEach { (t, icon) ->

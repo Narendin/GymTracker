@@ -39,7 +39,7 @@ import com.gymtracker.ui.components.OutlinedButton
 import com.gymtracker.ui.components.ScreenTitle
 import com.gymtracker.ui.theme.LocalGymPalette
 
-/** testTag для автотестов (issue #11). */
+/** testTag для автотестов. */
 const val TAG_MUSCLE = "muscle_chip"
 const val TAG_MUSCLE_ROW = "muscle_row"
 const val TAG_EYE = "eye"

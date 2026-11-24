@@ -63,7 +63,7 @@ import com.gymtracker.util.formatWeight
 import java.io.File
 import kotlin.math.max
 
-/** testTag для автотестов (issue #11). */
+/** testTag для автотестов. */
 const val TAG_EDIT = "exercise_edit"
 const val TAG_CARD_HISTORY_ROW = "card_history_row"
 const val TAG_DELETE = "exercise_delete"

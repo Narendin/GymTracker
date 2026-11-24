@@ -38,7 +38,7 @@ import com.gymtracker.ui.components.ExerciseThumb
 import com.gymtracker.ui.components.ScreenTitle
 import com.gymtracker.ui.theme.LocalGymPalette
 
-/** testTag для автотестов (issue #11): поле поиска и строки списка выбора. */
+/** testTag для автотестов: поле поиска и строки списка выбора. */
 const val TAG_SEARCH = "picker_search"
 const val TAG_PICK_ROW = "pick_row"
 
@@ -124,7 +124,7 @@ private fun PickerChip(label: String, active: Boolean, onClick: () -> Unit) {
     val palette = LocalGymPalette.current
     Box(
         Modifier
-            // Признак выбора — часть семантики: автотест проверяет выбранный фильтр (issue #11).
+            // Признак выбора — часть семантики: автотест проверяет выбранный фильтр.
             .semantics { selected = active }
             .clip(RoundedCornerShape(17.dp))
             .background(if (active) palette.accent else palette.panel2)

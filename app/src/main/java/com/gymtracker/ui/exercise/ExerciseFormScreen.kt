@@ -45,7 +45,7 @@ import com.gymtracker.ui.components.ScreenTitle
 import com.gymtracker.ui.theme.LocalGymPalette
 import java.io.File
 
-/** testTag для автотестов (issue #11). */
+/** testTag для автотестов. */
 const val TAG_FORM_NAME = "form_name"
 const val TAG_FORM_CHIP = "form_chip"
 const val TAG_ADD_PRIMARY = "add_primary"
