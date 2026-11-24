@@ -43,6 +43,8 @@ import com.gymtracker.ui.workout.TAG_REPS
 import com.gymtracker.ui.workout.TAG_SEARCH
 import com.gymtracker.ui.workout.TAG_TOTAL
 import com.gymtracker.ui.workout.TAG_WEIGHT
+import com.gymtracker.ui.workout.TAG_EDIT_WEIGHT
+import com.gymtracker.ui.workout.TAG_EDIT_REPS
 import com.gymtracker.util.formatDateFull
 import com.gymtracker.util.formatDateShort
 import org.junit.FixMethodOrder
@@ -59,8 +61,7 @@ import org.junit.runners.MethodSorters
  * опирается на результат предыдущего, поэтому порядок задаёт сам класс.
  *
  * Перед прогоном данные приложения очищают (`adb shell pm clear <applicationId>`),
- * первый метод стартует с пустой базы. Правку и удаление подходов (issue #6)
- * здесь не проверяем — функция ещё не реализована.
+ * первый метод стартует с пустой базы.
  *
  * Элементы находятся по тексту, `testTag` и `contentDescription`, координаты не
  * используются. Экраны прокручиваются (`performScrollTo`): элемент под сгибом
@@ -453,6 +454,135 @@ class AppFlowTest {
         // Возврат на верхний экран: k11 проверяет двойной «Назад» с него.
         tapText("← Мышцы")
         displayed("Мышцы")
+        device.pressBack()
+        displayed("Начать тренировку")
+    }
+
+    /** p16. Правка подхода: тап по чипу открывает диалог, «Сохранить» обновляет чип и тоннаж. */
+    @Test
+    fun p16_editSetUpdatesChipAndTonnage() {
+        tapText("Начать тренировку")
+        tapText("Добавить упражнение")
+        pickExercise("Жим штанги лёжа")
+        typeInto(TAG_WEIGHT, "50")
+        typeInto(TAG_REPS, "8")
+        tapText("Добавить подход")
+        displayed("50 кг × 8")
+
+        // Тап по чипу открывает диалог правки с текущими значениями.
+        tapText("50 кг × 8")
+        displayed("Правка подхода")
+        fieldHas(TAG_EDIT_WEIGHT, "50")
+        fieldHas(TAG_EDIT_REPS, "8")
+
+        // Изменить вес на 60, сохранить.
+        typeInto(TAG_EDIT_WEIGHT, "60")
+        tapText("Сохранить")
+
+        // Чип обновлён, диалог закрыт.
+        displayed("60 кг × 8")
+        compose.onNodeWithText("Правка подхода").assertDoesNotExist()
+
+        // Завершить упражнение и тренировку — тоннаж пересчитан (60×8=480).
+        tapText("Завершить упражнение")
+        tapText("Завершить тренировку")
+        tapText("Завершить")
+
+        counterValue(TAG_TOTAL, "4")
+        // Проверка тоннажа в журнале: 480 кг.
+        tapTab("Журнал")
+        compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
+        displayed("480 кг")
+        tapText("← Журнал")
+        device.pressBack()
+        displayed("Начать тренировку")
+    }
+
+    /** p17. Удаление подхода из завершённого блока: чип исчезает, тоннаж пересчитывается. */
+    @Test
+    fun p17_deleteSetFromCompletedBlock() {
+        tapText("Начать тренировку")
+        tapText("Добавить упражнение")
+        pickExercise("Приседания со штангой")
+        typeInto(TAG_WEIGHT, "80")
+        typeInto(TAG_REPS, "5")
+        tapText("Добавить подход")
+        displayed("80 кг × 5")
+
+        typeInto(TAG_WEIGHT, "90")
+        tapText("Добавить подход")
+        displayed("90 кг × 5")
+
+        // Завершить блок — чипы кликабельны в свёрнутом блоке.
+        tapText("Завершить упражнение")
+
+        // Тап по первому чипу (80 кг × 5) — диалог правки.
+        tapText("80 кг × 5")
+        displayed("Правка подхода")
+        fieldHas(TAG_EDIT_WEIGHT, "80")
+        fieldHas(TAG_EDIT_REPS, "5")
+
+        // Удалить подход.
+        tapText("Удалить")
+
+        // Чип «80 кг × 5» исчез, «90 кг × 5» остался.
+        compose.onNodeWithText("80 кг × 5").assertDoesNotExist()
+        displayed("90 кг × 5")
+
+        tapText("Завершить тренировку")
+        tapText("Завершить")
+
+        // Тоннаж: 90×5=450.
+        tapTab("Журнал")
+        compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
+        displayed("450 кг")
+        tapText("← Журнал")
+        device.pressBack()
+        displayed("Начать тренировку")
+    }
+
+    /** p18. Удаление последнего подхода блока — показывается A6 «Подходов нет». */
+    @Test
+    fun p18_deleteLastSetShowsNoSetsDialog() {
+        tapText("Начать тренировку")
+        tapText("Добавить упражнение")
+        pickExercise("Жим гантелей лёжа")
+        typeInto(TAG_WEIGHT, "30")
+        typeInto(TAG_REPS, "10")
+        tapText("Добавить подход")
+        displayed("30 кг × 10")
+
+        // Удалить единственный подход через диалог.
+        tapText("30 кг × 10")
+        displayed("Правка подхода")
+        tapText("Удалить")
+
+        // A6: «Подходов нет».
+        displayed("Подходов нет")
+        tapText("Завершить без записи")
+
+        // Блок удалён, сессия пуста — завершение без подтверждения.
+        tapText("Завершить тренировку")
+        compose.onNodeWithText("Завершить тренировку?").assertDoesNotExist()
+        displayed("Начать тренировку")
+        // Тренировка не записана: счётчик не вырос.
+        counterValue(TAG_TOTAL, "5")
+    }
+
+    /** p19. Журнал read-only: чипы подходов в деталях прошлой тренировки не кликабельны. */
+    @Test
+    fun p19_journalChipsAreReadOnly() {
+        tapTab("Журнал")
+        compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
+        displayed("← Журнал")
+
+        // Чип «90 кг × 5» из p17 — есть, но не кликабельный.
+        val chip = compose.onNodeWithText("90 кг × 5")
+        compose.waitUntil(30_000) { chip.isDisplayed() }
+        chip.assertIsDisplayed()
+        chip.assert(hasClickAction().not())
+
+        tapText("← Журнал")
         device.pressBack()
         displayed("Начать тренировку")
     }

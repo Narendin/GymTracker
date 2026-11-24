@@ -36,7 +36,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.gymtracker.ui.components.ConfirmDialog
+import com.gymtracker.ui.components.DangerSmallButton
 import com.gymtracker.ui.components.ExerciseThumb
 import com.gymtracker.ui.components.OutlinedButton
 import com.gymtracker.ui.components.OutlinedSmallButton
@@ -61,6 +63,8 @@ const val TAG_MONTH = "count_30"
 const val TAG_TOTAL = "total_workouts"
 const val TAG_REPS = "reps_input"
 const val TAG_WEIGHT = "weight_input"
+const val TAG_EDIT_WEIGHT = "edit_weight"
+const val TAG_EDIT_REPS = "edit_reps"
 
 /** Экран «Тренировка»: A1 — нет активной сессии; A2/A3/A3a — сессия. */
 @Composable
@@ -168,6 +172,10 @@ fun WorkoutScreen(
             onSecondary = { vm.continueExercise() },
         )
     }
+    // Issue #6: диалог правки подхода.
+    if (state.editSetId != null) {
+        EditSetDialog(vm)
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -221,7 +229,10 @@ private fun ExerciseBlockCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 block.sets.forEach { set ->
-                    SetChip("${formatWeight(set.weightKg)} кг × ${set.reps}")
+                    SetChip(
+                        "${formatWeight(set.weightKg)} кг × ${set.reps}",
+                        onClick = { vm.openEditSet(block.blockId, set.id, set.weightKg, set.reps) },
+                    )
                 }
             }
         }
@@ -258,6 +269,58 @@ private fun ExerciseBlockCard(
                 Spacer(Modifier.height(8.dp))
                 OutlinedSmallButton("Завершить упражнение", onClick = { vm.finishExercise(block.blockId) })
             }
+        }
+    }
+}
+
+/** Диалог правки подхода (issue #6): поля «Вес» и «Повторы», кнопки «Сохранить», «Удалить», «Отмена». */
+@Composable
+private fun EditSetDialog(vm: WorkoutsViewModel) {
+    val palette = LocalGymPalette.current
+    val state = vm.uiState.value
+    Dialog(onDismissRequest = { vm.cancelEditSet() }) {
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(palette.panel2)
+                .padding(16.dp),
+        ) {
+            Text(
+                "Правка подхода",
+                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                color = palette.text,
+            )
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                NumericField(
+                    label = "Вес",
+                    value = state.editWeight,
+                    onValueChange = { vm.setEditWeight(it) },
+                    accentBorder = false,
+                    testTag = TAG_EDIT_WEIGHT,
+                    modifier = Modifier.weight(1f),
+                )
+                NumericField(
+                    label = "Повторы",
+                    value = state.editReps,
+                    onValueChange = { vm.setEditReps(it) },
+                    accentBorder = false,
+                    testTag = TAG_EDIT_REPS,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            PrimaryButton("Сохранить", onClick = { vm.saveEditSet() })
+            Spacer(Modifier.height(8.dp))
+            DangerSmallButton("Удалить", onClick = { vm.deleteSet() })
+            Spacer(Modifier.height(8.dp))
+            OutlinedSmallButton("Отмена", onClick = { vm.cancelEditSet() })
         }
     }
 }
