@@ -476,7 +476,10 @@ class AppFlowTest {
         fieldHas(TAG_EDIT_REPS, "8")
 
         // Изменить вес на 60, сохранить.
+        // Поле должно показать набранное: диалог читает наблюдаемое состояние
+        // экрана, а не vm.uiState.value (иначе набитый текст не появляется).
         typeInto(TAG_EDIT_WEIGHT, "60")
+        fieldHas(TAG_EDIT_WEIGHT, "60")
         tapText("Сохранить")
 
         // Чип обновлён, диалог закрыт.
@@ -492,7 +495,7 @@ class AppFlowTest {
         // Проверка тоннажа в журнале: 480 кг.
         tapTab("Журнал")
         compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
-        displayed("480 кг")
+        displayedInLabel("480 кг")
         tapText("← Журнал")
         device.pressBack()
         displayed("Начать тренировку")
@@ -535,7 +538,7 @@ class AppFlowTest {
         // Тоннаж: 90×5=450.
         tapTab("Журнал")
         compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
-        displayed("450 кг")
+        displayedInLabel("450 кг")
         tapText("← Журнал")
         device.pressBack()
         displayed("Начать тренировку")
@@ -645,6 +648,17 @@ class AppFlowTest {
             } catch (_: Throwable) {
                 false
             }
+        }
+    }
+
+    /**
+     * Текст на экране как часть подписи: `hasText` требует точного совпадения,
+     * а тоннаж в деталях тренировки идёт в одной строке с числом упражнений
+     * («1 упражнение · 480 кг»), поэтому здесь ищем подстроку.
+     */
+    private fun displayedInLabel(text: String) {
+        compose.waitUntil(30_000) {
+            compose.onAllNodes(hasText(text, substring = true)).fetchSemanticsNodes().isNotEmpty()
         }
     }
 

@@ -174,7 +174,7 @@ fun WorkoutScreen(
     }
     // Issue #6: диалог правки подхода.
     if (state.editSetId != null) {
-        EditSetDialog(vm)
+        EditSetDialog(vm, state)
     }
 }
 
@@ -273,11 +273,18 @@ private fun ExerciseBlockCard(
     }
 }
 
-/** Диалог правки подхода (issue #6): поля «Вес» и «Повторы», кнопки «Сохранить», «Удалить», «Отмена». */
+/**
+ * Диалог правки подхода (issue #6): поля «Вес» и «Повторы», кнопки «Сохранить»,
+ * «Удалить», «Отмена».
+ *
+ * Состояние приходит параметром из наблюдаемого `collectAsState()` экрана.
+ * Читать `vm.uiState.value` внутри диалога нельзя: composable с неизменным
+ * `vm` не пересобирается, поле ввода получает старое значение и набитый текст
+ * исчезает (на клавиатуру «не реагирует»).
+ */
 @Composable
-private fun EditSetDialog(vm: WorkoutsViewModel) {
+private fun EditSetDialog(vm: WorkoutsViewModel, state: WorkoutUiState) {
     val palette = LocalGymPalette.current
-    val state = vm.uiState.value
     Dialog(onDismissRequest = { vm.cancelEditSet() }) {
         Column(
             Modifier
