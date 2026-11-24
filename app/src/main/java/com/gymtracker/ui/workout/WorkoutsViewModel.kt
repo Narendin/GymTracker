@@ -52,6 +52,11 @@ data class WorkoutUiState(
     val session: SessionUi? = null,
     val showFinishConfirm: Boolean = false,
     val noSetsBlockId: Long? = null,
+    /** Issue #6: диалог правки подхода. */
+    val editSetBlockId: Long? = null,
+    val editSetId: Long? = null,
+    val editWeight: String = "",
+    val editReps: String = "",
 )
 
 private data class Base(
@@ -69,6 +74,13 @@ private data class Quint(
     val confirm: Boolean,
 )
 
+private data class EditState(
+    val blockId: Long?,
+    val setId: Long?,
+    val weight: String,
+    val reps: String,
+)
+
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
 class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
 
@@ -77,6 +89,11 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     private val weightPrefilled = MutableStateFlow(true)
     private val finishConfirm = MutableStateFlow(false)
     private val noSetsBlockId = MutableStateFlow<Long?>(null)
+    // Issue #6: состояние диалога правки подхода.
+    private val editBlockId = MutableStateFlow<Long?>(null)
+    private val editSetId = MutableStateFlow<Long?>(null)
+    private val editWeight = MutableStateFlow("")
+    private val editReps = MutableStateFlow("")
 
     private val bound30 = Instant.now().minus(30, ChronoUnit.DAYS).toEpochMilli()
 
@@ -138,7 +155,10 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                         Quint(blocks, reps, weight, prefilled, confirm)
                     },
                     noSetsBlockId,
-                ) { q, noSets ->
+                    combine(editBlockId, editSetId, editWeight, editReps) { b, s, w, r ->
+                        EditState(b, s, w, r)
+                    },
+                ) { q, noSets, edit ->
                     WorkoutUiState(
                         todayLabel = today,
                         lastWorkoutLabel = lastLabel,
@@ -147,6 +167,10 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                         session = buildSessionUi(session, q.blocks, q.reps, q.weight, q.prefilled),
                         showFinishConfirm = q.confirm,
                         noSetsBlockId = noSets,
+                        editSetBlockId = edit.blockId,
+                        editSetId = edit.setId,
+                        editWeight = edit.weight,
+                        editReps = edit.reps,
                     )
                 }
             }
@@ -270,5 +294,62 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
 
     fun cancelComplete() {
         finishConfirm.value = false
+    }
+
+    // ——— Issue #6: правка и удаление подхода ———
+
+    /** Открыть диалог правки: подставить текущие значения подхода. */
+    fun openEditSet(blockId: Long, setId: Long, weightKg: Double, reps: Int) {
+        editBlockId.value = blockId
+        editSetId.value = setId
+        editWeight.value = formatWeight(weightKg)
+        editReps.value = reps.toString()
+    }
+
+    fun setEditWeight(text: String) {
+        editWeight.value = text
+    }
+
+    fun setEditReps(text: String) {
+        editReps.value = text
+    }
+
+    /** «Сохранить»: обновить подход; пустые значения не сохраняются. */
+    fun saveEditSet() {
+        val setId = editSetId.value ?: return
+        val reps = editReps.value.toIntOrNull() ?: return
+        val weight = editWeight.value.replace(',', '.').toDoubleOrNull() ?: return
+        if (reps <= 0) return
+        viewModelScope.launch {
+            repo.editSet(setId, weight, reps)
+            closeEditDialog()
+        }
+    }
+
+    /** «Удалить»: убрать подход; если блок остался без подходов — A6. */
+    fun deleteSet() {
+        val setId = editSetId.value ?: return
+        val blockId = editBlockId.value ?: return
+        viewModelScope.launch {
+            repo.removeSet(setId)
+            closeEditDialog()
+            // Если удалён последний подход блока — показать A6.
+            val session = uiState.value.session ?: return@launch
+            val block = session.blocks.firstOrNull { it.blockId == blockId }
+            if (block != null && block.sets.size == 1) {
+                noSetsBlockId.value = blockId
+            }
+        }
+    }
+
+    fun cancelEditSet() {
+        closeEditDialog()
+    }
+
+    private fun closeEditDialog() {
+        editBlockId.value = null
+        editSetId.value = null
+        editWeight.value = ""
+        editReps.value = ""
     }
 }

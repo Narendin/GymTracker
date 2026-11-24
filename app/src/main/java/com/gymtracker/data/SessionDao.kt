@@ -59,6 +59,12 @@ interface SessionDao {
     @Insert
     suspend fun insertSet(set: SetEntry): Long
 
+    @Query("UPDATE set_entry SET weightKg = :weightKg, reps = :reps WHERE id = :id")
+    suspend fun updateSet(id: Long, weightKg: Double, reps: Int)
+
+    @Query("DELETE FROM set_entry WHERE id = :id")
+    suspend fun deleteSet(id: Long)
+
     @Query("SELECT MAX(orderInExercise) FROM set_entry WHERE workoutExerciseId = :blockId")
     suspend fun maxSetOrder(blockId: Long): Int?
 

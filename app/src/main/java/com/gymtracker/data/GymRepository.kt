@@ -60,6 +60,13 @@ class GymRepository(
         )
     }
 
+    /** Issue #6: правка подхода в текущей сессии. */
+    suspend fun editSet(setId: Long, weightKg: Double, reps: Int) =
+        sessionDao.updateSet(setId, weightKg, reps)
+
+    /** Issue #6: удаление подхода из текущей сессии. */
+    suspend fun removeSet(setId: Long) = sessionDao.deleteSet(setId)
+
     suspend fun finishBlock(blockId: Long) =
         sessionDao.setBlockStatus(blockId, BlockStatus.DONE)
 
