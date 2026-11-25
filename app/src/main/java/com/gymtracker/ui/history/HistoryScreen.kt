@@ -58,6 +58,7 @@ fun HistoryScreen(
     onOpenExercise: (Long) -> Unit,
     onOpenDetail: (Long) -> Unit = { },
     onCloseDetail: () -> Unit = { },
+    onDeleted: () -> Unit = { },
 ) {
     val state by vm.uiState.collectAsState()
     val palette = LocalGymPalette.current
@@ -129,7 +130,7 @@ fun HistoryScreen(
                 message = "Запись и её подходы будут удалены.",
                 primaryText = "Удалить",
                 secondaryText = "Отмена",
-                onPrimary = { vm.confirmDelete() },
+                onPrimary = { vm.confirmDelete(); onDeleted() },
                 onSecondary = { vm.cancelDelete() },
             )
         }

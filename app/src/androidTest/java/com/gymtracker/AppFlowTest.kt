@@ -590,6 +590,61 @@ class AppFlowTest {
         displayed("Начать тренировку")
     }
 
+    /** q20. Удаление тренировки из деталей: нижняя панель возвращается, навигация корректна. */
+    @Test
+    fun q20_deleteWorkoutFromDetailsRestoresBottomBar() {
+        // Часть 1: удаление из деталей, открытых тапом по строке журнала.
+        tapTab("Журнал")
+        compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
+        displayed("← Журнал")
+        // В деталях панель не показывается: табы отсутствуют в дереве.
+        compose.onNodeWithContentDescription("Журнал").assertDoesNotExist()
+
+        tapText("Удалить тренировку")
+        tapText("Удалить")
+
+        // После удаления: список журнала, панель видна.
+        displayed("Журнал")
+        compose.onNodeWithContentDescription("Журнал").assertIsDisplayed()
+        compose.onAllNodesWithTag(TAG_ROW).assertCountEquals(4)
+
+        // Часть 2: удаление из деталей, открытых из счётчика «Последняя тренировка».
+        tapTab("Тренировка")
+        tapTag(TAG_LAST)
+        displayed("← Журнал")
+
+        tapText("Удалить тренировку")
+        tapText("Удалить")
+
+        // Возврат на журнал, панель видна, активен таб «Журнал».
+        displayed("Журнал")
+        compose.onNodeWithContentDescription("Журнал").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Тренировка").assertIsDisplayed()
+        compose.onAllNodesWithTag(TAG_ROW).assertCountEquals(3)
+
+        // Часть 3: удаление из деталей, открытых из карточки упражнения.
+        tapTab("Мышцы")
+        openArea("Грудь")
+        tapText("Жим штанги лёжа")
+        displayed("← Мышцы")
+        // Строка истории ведёт в детали тренировки (карточка снимается со стека).
+        tapTag(TAG_CARD_HISTORY_ROW)
+        displayed("← Журнал")
+
+        tapText("Удалить тренировку")
+        tapText("Удалить")
+
+        // Возврат на «Мышцы»: панель видна (top — Tab).
+        displayed("Мышцы")
+        compose.onNodeWithContentDescription("Мышцы").assertIsDisplayed()
+
+        // Часть 4: «Назад» — возврат на Журнал, затем на Тренировку.
+        device.pressBack()
+        displayed("Журнал")
+        device.pressBack()
+        displayed("Начать тренировку")
+    }
+
     /** Есть ли элемент в дереве (не обязательно виден). */
     private fun exists(text: String): Boolean =
         compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
