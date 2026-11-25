@@ -164,7 +164,8 @@ app/src/main/java/com/gymtracker/
 app/src/test/  юнит-тесты плюрализации/форматов/посева
 app/src/androidTest/  автотесты интерфейса (AppFlowTest)
 docs/        STATE.md, CHANGELOG.md, gym-tracker-requirements.md, mockups-mvp.html
-skills/      git-workflow (git-операции), run-autotests (прогон автотестов)
+skills/      git-workflow (git-операции), create-issue (заведения issue),
+             run-autotests (прогон автотестов), write-autotests (написание автотестов)
 ```
 
 ## Решения, заложенные в основу
