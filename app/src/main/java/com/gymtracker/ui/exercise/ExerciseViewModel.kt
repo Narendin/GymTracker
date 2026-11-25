@@ -30,6 +30,7 @@ data class ExerciseCardUiState(
     val muscles: List<ExerciseMuscleUi> = emptyList(),
     val points: List<WeightPoint> = emptyList(),
     val history: List<HistoryRowUi> = emptyList(),
+    val isBodyweight: Boolean = false,
     val showDeleteConfirm: Boolean = false,
     val showPhotoSheet: Boolean = false,
 )
@@ -42,6 +43,7 @@ data class ExerciseFormUiState(
     val primaryIds: List<Long> = emptyList(),
     val secondaryIds: List<Long> = emptyList(),
     val allMuscles: List<Muscle> = emptyList(),
+    val isBodyweight: Boolean = false,
 )
 
 /** C3 — карточка упражнения; C2/C3c — форма создания/редактирования; C3a — лист фото. */
@@ -62,9 +64,11 @@ class ExerciseViewModel(private val repo: GymRepository) : ViewModel() {
                     repo.maxWeightPoints(state.exerciseId),
                     repo.exerciseHistorySets(state.exerciseId),
                 ) { exercise, muscles, points, sets ->
+                    val bw = exercise?.isBodyweight ?: false
                     state.copy(
                         name = exercise?.name ?: state.name,
                         imagePath = exercise?.imagePath,
+                        isBodyweight = bw,
                         muscles = muscles.map { ExerciseMuscleUi(it.muscleId, it.name, it.role.name) },
                         points = points,
                         history = sets
@@ -77,7 +81,10 @@ class ExerciseViewModel(private val repo: GymRepository) : ViewModel() {
                                     dateLabel = formatDateFull(rows.first().startMillis),
                                     chips = rows
                                         .sortedBy { it.orderInExercise }
-                                        .map { "${formatWeight(it.weightKg)} кг × ${it.reps}" },
+                                        .map {
+                                            if (bw) "${it.reps} повт."
+                                            else "${formatWeight(it.weightKg)} кг × ${it.reps}"
+                                        },
                                 )
                             },
                     )
@@ -186,6 +193,7 @@ class ExerciseViewModel(private val repo: GymRepository) : ViewModel() {
                 primaryIds = links.filter { it.role.name == "PRIMARY" }.map { it.muscleId },
                 secondaryIds = links.filter { it.role.name == "SECONDARY" }.map { it.muscleId },
                 allMuscles = muscles,
+                isBodyweight = exercise?.isBodyweight ?: false,
             )
         }
     }
@@ -214,6 +222,10 @@ class ExerciseViewModel(private val repo: GymRepository) : ViewModel() {
         )
     }
 
+    fun setFormBodyweight(value: Boolean) {
+        form.value = form.value.copy(isBodyweight = value)
+    }
+
     fun saveForm() {
         val state = form.value
         val name = state.name.trim()
@@ -221,9 +233,9 @@ class ExerciseViewModel(private val repo: GymRepository) : ViewModel() {
         viewModelScope.launch {
             val id = state.editingId
             if (id == null) {
-                repo.createExercise(name, state.primaryIds, state.secondaryIds, state.photoPath)
+                repo.createExercise(name, state.primaryIds, state.secondaryIds, state.photoPath, state.isBodyweight)
             } else {
-                repo.updateExercise(id, name, state.primaryIds, state.secondaryIds, state.photoPath)
+                repo.updateExercise(id, name, state.primaryIds, state.secondaryIds, state.photoPath, state.isBodyweight)
             }
             form.value = form.value.copy(open = false)
         }

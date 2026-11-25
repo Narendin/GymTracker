@@ -121,9 +121,9 @@ interface SessionDao {
     )
     fun sessionPrimaryMuscles(): Flow<List<SessionPrimaryMuscle>>
 
-    /** График карточки: максимальный рабочий вес по датам завершённых тренировок. */
+    /** График карточки: максимальный рабочий вес (или повторы) по датам завершённых тренировок. */
     @Query(
-        "SELECT ws.startMillis AS dateMillis, MAX(se.weightKg) AS maxWeight " +
+        "SELECT ws.startMillis AS dateMillis, MAX(se.weightKg) AS maxWeight, MAX(se.reps) AS maxReps " +
             "FROM set_entry se JOIN workout_exercise we ON we.id = se.workoutExerciseId " +
             "JOIN workout_session ws ON ws.id = we.sessionId " +
             "WHERE we.exerciseId = :exerciseId AND ws.finishedAtMillis IS NOT NULL " +
@@ -160,7 +160,7 @@ data class ExerciseHistorySet(
     val orderInExercise: Int,
 )
 
-data class WeightPoint(val dateMillis: Long, val maxWeight: Double)
+data class WeightPoint(val dateMillis: Long, val maxWeight: Double, val maxReps: Int)
 
 data class ExerciseSessionRow(val sessionId: Long, val startMillis: Long)
 

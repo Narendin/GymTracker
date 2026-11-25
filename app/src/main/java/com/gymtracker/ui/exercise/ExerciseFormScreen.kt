@@ -51,6 +51,7 @@ const val TAG_FORM_CHIP = "form_chip"
 const val TAG_ADD_PRIMARY = "add_primary"
 const val TAG_ADD_SECONDARY = "add_secondary"
 const val TAG_SAVE = "form_save"
+const val TAG_BODYWEIGHT_TOGGLE = "form_bodyweight"
 
 /** C2/C3c — форма упражнения: фото, название, основные и вторичные мышцы, «Сохранить». */
 @Composable
@@ -141,6 +142,40 @@ fun ExerciseFormScreen(
                     }
                 },
             )
+
+            // Toggle: «Упражнение без дополнительного веса»
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .testTag(TAG_BODYWEIGHT_TOGGLE)
+                    .clip(RoundedCornerShape(9.dp))
+                    .background(palette.field)
+                    .border(1.dp, palette.line, RoundedCornerShape(9.dp))
+                    .clickable { vm.setFormBodyweight(!state.isBodyweight) }
+                    .padding(horizontal = 12.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    "Упражнение без дополнительного веса",
+                    fontSize = 15.sp,
+                    color = palette.text,
+                    modifier = Modifier.weight(1f),
+                )
+                Box(
+                    Modifier
+                        .size(28.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(if (state.isBodyweight) palette.accent else palette.panel2)
+                        .border(1.dp, palette.accent, RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        if (state.isBodyweight) "✓" else "",
+                        fontSize = 14.sp,
+                        color = if (state.isBodyweight) palette.onAccent else palette.muted,
+                    )
+                }
+            }
 
             MuscleSection(
                 title = "Основные мышцы",

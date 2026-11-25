@@ -112,9 +112,10 @@ class GymRepository(
         primaryMuscleIds: List<Long>,
         secondaryMuscleIds: List<Long>,
         imagePath: String?,
+        isBodyweight: Boolean = false,
     ): Long {
         val id = catalogDao.insertExercise(
-            Exercise(name = name, type = ExerciseType.CUSTOM, imagePath = imagePath)
+            Exercise(name = name, type = ExerciseType.CUSTOM, imagePath = imagePath, isBodyweight = isBodyweight)
         )
         primaryMuscleIds.forEach {
             catalogDao.insertLink(ExerciseMuscleLink(id, it, MuscleRole.PRIMARY))
@@ -132,9 +133,10 @@ class GymRepository(
         primaryMuscleIds: List<Long>,
         secondaryMuscleIds: List<Long>,
         imagePath: String?,
+        isBodyweight: Boolean,
     ) {
         val current = catalogDao.exerciseByIdOnce(id) ?: return
-        catalogDao.updateExercise(current.copy(name = name, imagePath = imagePath))
+        catalogDao.updateExercise(current.copy(name = name, imagePath = imagePath, isBodyweight = isBodyweight))
         catalogDao.deleteLinks(id)
         primaryMuscleIds.forEach {
             catalogDao.insertLink(ExerciseMuscleLink(id, it, MuscleRole.PRIMARY))

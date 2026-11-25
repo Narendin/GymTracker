@@ -39,6 +39,7 @@ object Seed {
         val name: String,
         val primary: Long,
         val secondary: List<Long>,
+        val bodyweight: Boolean = false,
     )
 
     private val exercises = listOf(
@@ -48,18 +49,18 @@ object Seed {
         CatalogEntry(3L, "Жим гантелей на наклонной", 1L, listOf(5L, 9L)),
         CatalogEntry(4L, "Разведение гантелей лёжа", 1L, listOf(5L)),
         CatalogEntry(5L, "Разведение гантелей на наклонной", 1L, listOf(5L)),
-        CatalogEntry(6L, "Отжимания на брусьях", 1L, listOf(9L, 5L)),
-        CatalogEntry(7L, "Отжимания от пола", 1L, listOf(5L, 9L)),
+        CatalogEntry(6L, "Отжимания на брусьях", 1L, listOf(9L, 5L), bodyweight = true),
+        CatalogEntry(7L, "Отжимания от пола", 1L, listOf(5L, 9L), bodyweight = true),
         CatalogEntry(8L, "Кроссовер", 1L, listOf()),
         CatalogEntry(9L, "Пуловер", 1L, listOf(2L, 3L)),
         // Спина
-        CatalogEntry(10L, "Подтягивания", 2L, listOf(8L, 10L, 3L)),
+        CatalogEntry(10L, "Подтягивания", 2L, listOf(8L, 10L, 3L), bodyweight = true),
         CatalogEntry(11L, "Тяга верхнего блока", 2L, listOf(8L, 10L)),
         CatalogEntry(12L, "Тяга горизонтального блока сидя", 2L, listOf(8L, 10L, 7L)),
         CatalogEntry(13L, "Тяга штанги в наклоне", 2L, listOf(7L, 8L)),
         CatalogEntry(14L, "Шраги", 6L, listOf(10L)),
         CatalogEntry(15L, "Становая тяга", 4L, listOf(14L, 11L, 15L)),
-        CatalogEntry(16L, "Гиперэкстензии", 4L, listOf(14L, 12L)),
+        CatalogEntry(16L, "Гиперэкстензии", 4L, listOf(14L, 12L), bodyweight = true),
         CatalogEntry(17L, "Румынская тяга", 12L, listOf(4L, 14L)),
         // Плечи
         CatalogEntry(18L, "Жим штанги сидя", 5L, listOf(6L, 9L)),
@@ -76,13 +77,13 @@ object Seed {
         CatalogEntry(28L, "Французский жим", 9L, listOf()),
         CatalogEntry(29L, "Разгибание на блоке", 9L, listOf()),
         CatalogEntry(30L, "Разгибание гантели из-за головы", 9L, listOf()),
-        CatalogEntry(31L, "Отжимания узким хватом", 9L, listOf(1L)),
+        CatalogEntry(31L, "Отжимания узким хватом", 9L, listOf(1L), bodyweight = true),
         CatalogEntry(32L, "Сгибание запястий", 10L, listOf(8L)),
         // Ноги
         CatalogEntry(33L, "Приседания со штангой", 11L, listOf(14L, 15L)),
         CatalogEntry(34L, "Фронтальные приседания", 11L, listOf(15L, 14L)),
         CatalogEntry(35L, "Жим ногами", 11L, listOf(14L, 12L)),
-        CatalogEntry(36L, "Выпады", 11L, listOf(14L, 12L)),
+        CatalogEntry(36L, "Выпады", 11L, listOf(14L, 12L), bodyweight = true),
         CatalogEntry(37L, "Сгибание ног в тренажёре", 12L, listOf()),
         CatalogEntry(38L, "Разгибание ног в тренажёре", 11L, listOf()),
         CatalogEntry(39L, "Подъёмы на носки стоя", 13L, listOf()),
@@ -90,9 +91,9 @@ object Seed {
         CatalogEntry(41L, "Ягодичный мостик", 14L, listOf(15L)),
         CatalogEntry(42L, "Отведение ноги в тренажёре", 14L, listOf()),
         // Корпус
-        CatalogEntry(43L, "Скручивания", 15L, listOf()),
-        CatalogEntry(44L, "Подъём ног в висе", 15L, listOf()),
-        CatalogEntry(45L, "Планка", 15L, listOf()),
+        CatalogEntry(43L, "Скручивания", 15L, listOf(), bodyweight = true),
+        CatalogEntry(44L, "Подъём ног в висе", 15L, listOf(), bodyweight = true),
+        CatalogEntry(45L, "Планка", 15L, listOf(), bodyweight = true),
         CatalogEntry(46L, "Скручивания на блоке", 15L, listOf()),
     )
 
@@ -108,11 +109,11 @@ object Seed {
             add("INSERT INTO muscle (id, name, areaId) VALUES ($id, '${esc(name)}', $areaId)")
         }
         exercises.forEach { e ->
-            // Поле isHidden (версия 2 базы) обязательно имеет значение: схема Room
-            // создаёт колонку без DEFAULT, поэтому посев задаёт его явно.
+            // Поля isHidden (версия 2) и isBodyweight (версия 3) обязательно имеют значение:
+            // схема Room создаёт колонку без DEFAULT, поэтому посев задаёт их явно.
             add(
-                "INSERT INTO exercise (id, name, type, imagePath, isDeleted, isHidden) " +
-                    "VALUES (${e.id}, '${esc(e.name)}', 'CATALOG', NULL, 0, 0)"
+                "INSERT INTO exercise (id, name, type, imagePath, isDeleted, isHidden, isBodyweight) " +
+                    "VALUES (${e.id}, '${esc(e.name)}', 'CATALOG', NULL, 0, 0, ${if (e.bodyweight) 1 else 0})"
             )
             add(
                 "INSERT INTO exercise_muscle (exerciseId, muscleId, role) " +

@@ -215,6 +215,14 @@
               <span class="chip">80 кг × 6</span>
             </div>
           </div>
+          <div class="exBlock">
+            <div class="exHeader"><span class="thumb">фото</span>
+              <span class="exName">Подтягивания</span></div>
+            <div class="chips">
+              <span class="chip">12 повт.</span>
+              <span class="chip">10 повт.</span>
+            </div>
+          </div>
           <div class="exBlock active">
             <div class="exHeader"><span class="thumb">фото</span>
               <span class="exName">Тяга горизонтального блока сидя</span></div>
@@ -240,7 +248,7 @@
           <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm7.43 4.97c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.24l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.29 2 14.09 2h-4c-.2 0-.37.18-.41.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.22-.07-.49.02-.61.24l-2 3.46c-.13.22-.06.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.31.61.24l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.04.24.21.42.41.42h4c.2 0 .37-.18.41-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.22.07.49-.02.61-.24l2-3.46c.12-.22.06-.49-.12-.64l-2.11-1.66z"/></svg></div>
         </div>
       </div>
-      <div class="label">A3. Активная сессия — активный блок раскрыт, завершённые свёрнуты; «↻» не показывается, пока есть активное упражнение, нижние кнопки скрыты</div>
+      <div class="label">A3. Активная сессия — активный блок раскрыт, завершённые свёрнуты; «↻» не показывается, пока есть активное упражнение, нижние кнопки скрыты; у упражнения без веса чип «12 повт.» без килограммов</div>
     </div>
 
     <!-- A3a. Нет активного упражнения, все завершены -->
@@ -524,6 +532,10 @@
           <div style="padding:0 16px">
             <div class="fieldLabel">Название</div>
             <div class="formField">Тяга в тренажёре с вертикальной спинкой</div>
+            <div class="toggleRow" style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#1c2026;border:1px solid #2a2f38;border-radius:9px;margin:6px 0">
+              <span style="font-size:15px;color:#e8eaf0">Упражнение без дополнительного веса</span>
+              <span style="width:28px;height:28px;border-radius:14px;background:#1c2026;border:1px solid #2ec4a0;display:flex;align-items:center;justify-content:center;color:#0d1014;font-size:14px"></span>
+            </div>
             <div class="fieldLabel">Основные мышцы</div>
             <div class="chipsRow" style="padding:0 0 8px">
               <span class="gChip active">Широчайшие</span>
@@ -540,7 +552,7 @@
           </div>
         </div>
       </div>
-      <div class="label">C2. Новое упражнение (вложенный из C1) — основные мышцы акцентом, вторичные серым, можно по несколько</div>
+      <div class="label">C2. Новое упражнение (вложенный из C1) — строка под названием тоггл «Упражнение без дополнительного веса», основные мышцы акцентом, вторичные серым, можно по несколько</div>
     </div>
 
     <!-- C3. Карточка упражнения -->
@@ -604,6 +616,68 @@
       <div class="label">C3. Карточка упражнения (из C1, из B2, из A3) — карандаш в правом верхнем углу открывает редактирование (C3c), тап по фото лист C3a, «Удалить упражнение» диалог C3b; график листается; история по тренировкам</div>
     </div>
 
+    <!-- C3d. Карточка упражнения без дополнительного веса -->
+    <div>
+      <div class="screen">
+        <div class="back">← Мышцы</div>
+        <div style="display:flex; align-items:center; padding:4px 16px 0">
+          <div class="topbar" style="padding:0; flex:1; min-width:0">Подтягивания</div>
+          <div class="pencilBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2ec4a0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4.5-1.5L19 8.5 15.5 5 6 14.5 4 20z"/><path d="M14 6.5 17.5 10"/></svg></div>
+        </div>
+        <div class="content" style="padding-top:0">
+          <div class="photo" style="margin:10px 16px 0">
+            <div class="plusCircle"><svg viewBox="0 0 46 46" fill="none"><circle cx="23" cy="23" r="22" stroke="#2ec4a0" stroke-width="1.6"/><path d="M23 15v16M15 23h16" stroke="#2ec4a0" stroke-width="1.8"/></svg></div>
+            Фото
+          </div>
+          <div style="padding:2px 16px 0; font-size:13px; color:#2ec4a0">Без дополнительного веса</div>
+          <div class="muscleTags">
+            <span class="tag primary">Широчайшие</span>
+            <span class="tag">Бицепс</span>
+            <span class="tag">Предплечья</span>
+          </div>
+          <div class="chartBox">
+            <div class="chartTitle">Максимальные повторы по датам</div>
+            <svg width="320" height="140" viewBox="0 0 320 140">
+              <line x1="30" y1="112" x2="310" y2="112" stroke="#2b3039" stroke-width="1"/>
+              <line x1="30" y1="16" x2="30" y2="112" stroke="#2b3039" stroke-width="1"/>
+              <text x="24" y="116" fill="#8b93a1" font-size="10" text-anchor="end">8</text>
+              <text x="24" y="80" fill="#8b93a1" font-size="10" text-anchor="end">10</text>
+              <text x="24" y="44" fill="#8b93a1" font-size="10" text-anchor="end">12</text>
+              <polyline points="40,104 96,88 152,88 208,72 264,72" fill="none" stroke="#2ec4a0" stroke-width="3"/>
+              <circle cx="40" cy="104" r="4" fill="#2ec4a0"/>
+              <circle cx="96" cy="88" r="4" fill="#2ec4a0"/>
+              <circle cx="152" cy="88" r="4" fill="#2ec4a0"/>
+              <circle cx="208" cy="72" r="4" fill="#2ec4a0"/>
+              <circle cx="264" cy="72" r="4" fill="#2ec4a0"/>
+              <text x="40" y="130" fill="#8b93a1" font-size="10" text-anchor="middle">09.11</text>
+              <text x="96" y="130" fill="#8b93a1" font-size="10" text-anchor="middle">12.11</text>
+              <text x="152" y="130" fill="#8b93a1" font-size="10" text-anchor="middle">16.11</text>
+              <text x="208" y="130" fill="#8b93a1" font-size="10" text-anchor="middle">19.11</text>
+              <text x="264" y="130" fill="#8b93a1" font-size="10" text-anchor="middle">21.11</text>
+            </svg>
+          </div>
+          <div class="chartTitle">История упражнения</div>
+          <div class="histRow">
+            <div class="histDate">21.11.2026</div>
+            <div class="chips" style="padding:6px 0 0">
+              <span class="chip">12 повт.</span>
+              <span class="chip">10 повт.</span>
+            </div>
+          </div>
+          <div class="histRow">
+            <div class="histDate">16.11.2026</div>
+            <div class="chips" style="padding:6px 0 0">
+              <span class="chip">10 повт.</span>
+              <span class="chip">10 повт.</span>
+              <span class="chip">8 повт.</span>
+            </div>
+          </div>
+          <div class="btn btnSmallDanger">Удалить упражнение</div>
+        </div>
+      </div>
+      <div class="label">C3d. Карточка упражнения без дополнительного веса — под фото read-only подпись «Без дополнительного веса», график по максимальным повторам с подписями оси в повторах, чипы истории без килограммов</div>
+    </div>
+
     <!-- C3b. Диалог удаления упражнения -->
     <div>
       <div class="screen">
@@ -644,6 +718,10 @@
           <div style="padding:0 16px">
             <div class="fieldLabel">Название</div>
             <div class="formField">Жим штанги лёжа</div>
+            <div class="toggleRow" style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:#1c2026;border:1px solid #2a2f38;border-radius:9px;margin:6px 0">
+              <span style="font-size:15px;color:#e8eaf0">Упражнение без дополнительного веса</span>
+              <span style="width:28px;height:28px;border-radius:14px;background:#2ec4a0;border:1px solid #2ec4a0;display:flex;align-items:center;justify-content:center;color:#0d1014;font-size:14px">✓</span>
+            </div>
             <div class="fieldLabel">Основные мышцы</div>
             <div class="chipsRow" style="padding:0 0 8px">
               <span class="gChip active">Грудь</span>

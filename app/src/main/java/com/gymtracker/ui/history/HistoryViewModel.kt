@@ -33,7 +33,7 @@ data class HistoryBlockUi(
     val exerciseId: Long,
     val name: String,
     val imagePath: String?,
-    /** bubble-подход: «85 кг × 5». */
+    /** bubble-подход: «85 кг × 5» или «12 повт.». */
     val chips: List<String>,
 )
 
@@ -112,7 +112,12 @@ class HistoryViewModel(private val repo: GymRepository) : ViewModel() {
                                         imagePath = it.exercise.imagePath,
                                         chips = it.sets
                                             .sortedBy { s -> s.orderInExercise }
-                                            .map { s -> "${formatWeight(s.weightKg)} кг × ${s.reps}" },
+                                            .map { s ->
+                                                if (it.exercise.isBodyweight)
+                                                    "${s.reps} повт."
+                                                else
+                                                    "${formatWeight(s.weightKg)} кг × ${s.reps}"
+                                            },
                                     )
                                 },
                         ),
