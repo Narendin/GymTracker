@@ -1,7 +1,7 @@
 # GymTracker — состояние проекта
 
 Приложение по спецификации `docs/gym-tracker-requirements.md` (MVP, релиз 1).
-Версия 1.0.0 (`versionCode = 2`). Kotlin + Jetpack Compose + Room, офлайн,
+Версия 1.0.3 (`versionCode = 5`). Kotlin + Jetpack Compose + Room, офлайн,
 только кг, только русский, тёмная тема по умолчанию. Единственное сетевое
 обращение — проверка обновлений по кнопке в настройках.
 Изменения по версиям — `docs/CHANGELOG.md`, мокапы — `docs/mockups-mvp.html`,
