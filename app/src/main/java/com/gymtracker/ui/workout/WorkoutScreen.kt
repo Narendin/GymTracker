@@ -51,7 +51,7 @@ import com.gymtracker.ui.components.StatRow
 import com.gymtracker.ui.history.PeriodFilter
 import com.gymtracker.ui.theme.LocalGymPalette
 import com.gymtracker.util.exercisesLabel
-import com.gymtracker.util.formatWeight
+import com.gymtracker.util.formatSet
 import com.gymtracker.util.workoutsLabel
 
 /**
@@ -229,10 +229,7 @@ private fun ExerciseBlockCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 block.sets.forEach { set ->
-                    val chipLabel = if (block.isBodyweight)
-                        "${set.reps} повт."
-                    else
-                        "${formatWeight(set.weightKg)} кг × ${set.reps}"
+                    val chipLabel = formatSet(set.weightKg, set.reps, block.isBodyweight)
                     SetChip(
                         chipLabel,
                         onClick = { vm.openEditSet(block.blockId, set.id, set.weightKg, set.reps, block.isBodyweight) },

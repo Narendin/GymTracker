@@ -34,6 +34,11 @@ fun groupNumber(n: Int): String {
     }.reversed()
 }
 
+/** Формат подхода: «5 × 85 кг» (повторы, затем вес) или «12 повт.» для собственного веса. */
+fun formatSet(weightKg: Double, reps: Int, isBodyweight: Boolean): String {
+    return if (isBodyweight) "$reps повт." else "$reps × ${formatWeight(weightKg)} кг"
+}
+
 /** Вес: целые без знака, дробные — с одним знаком («40», «22.5»). */
 fun formatWeight(kg: Double): String {
     val rounded = Math.round(kg * 10) / 10.0

@@ -8,7 +8,7 @@ import com.gymtracker.data.GymRepository
 import com.gymtracker.data.Muscle
 import com.gymtracker.data.WeightPoint
 import com.gymtracker.util.formatDateFull
-import com.gymtracker.util.formatWeight
+import com.gymtracker.util.formatSet
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -81,10 +81,7 @@ class ExerciseViewModel(private val repo: GymRepository) : ViewModel() {
                                     dateLabel = formatDateFull(rows.first().startMillis),
                                     chips = rows
                                         .sortedBy { it.orderInExercise }
-                                        .map {
-                                            if (bw) "${it.reps} повт."
-                                            else "${formatWeight(it.weightKg)} кг × ${it.reps}"
-                                        },
+                                        .map { formatSet(it.weightKg, it.reps, bw) },
                                 )
                             },
                     )

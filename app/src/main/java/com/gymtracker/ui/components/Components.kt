@@ -148,7 +148,7 @@ fun DangerSmallButton(text: String, onClick: () -> Unit, modifier: Modifier = Mo
     }
 }
 
-/** bubble-подход: «85 кг × 5». */
+/** bubble-подход: «5 × 85 кг». */
 @Composable
 fun SetChip(text: String, modifier: Modifier = Modifier, onClick: (() -> Unit)? = null) {
     val palette = LocalGymPalette.current

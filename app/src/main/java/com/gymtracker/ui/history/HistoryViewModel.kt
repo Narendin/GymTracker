@@ -7,7 +7,7 @@ import com.gymtracker.data.SessionPrimaryMuscle
 import com.gymtracker.data.SessionRow
 import com.gymtracker.util.exercisesLabel
 import com.gymtracker.util.formatDateFull
-import com.gymtracker.util.formatWeight
+import com.gymtracker.util.formatSet
 import com.gymtracker.util.groupNumber
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -33,7 +33,7 @@ data class HistoryBlockUi(
     val exerciseId: Long,
     val name: String,
     val imagePath: String?,
-    /** bubble-подход: «85 кг × 5» или «12 повт.». */
+    /** bubble-подход: «5 × 85 кг» или «12 повт.». */
     val chips: List<String>,
 )
 
@@ -113,10 +113,7 @@ class HistoryViewModel(private val repo: GymRepository) : ViewModel() {
                                         chips = it.sets
                                             .sortedBy { s -> s.orderInExercise }
                                             .map { s ->
-                                                if (it.exercise.isBodyweight)
-                                                    "${s.reps} повт."
-                                                else
-                                                    "${formatWeight(s.weightKg)} кг × ${s.reps}"
+                                                formatSet(s.weightKg, s.reps, it.exercise.isBodyweight)
                                             },
                                     )
                                 },
