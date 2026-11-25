@@ -22,6 +22,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.gymtracker.ui.TAG_TAB
+import com.gymtracker.ui.exercise.TAG_BODYWEIGHT_TOGGLE
 import com.gymtracker.ui.exercise.TAG_CARD_HISTORY_ROW
 import com.gymtracker.ui.exercise.TAG_DELETE
 import com.gymtracker.ui.exercise.TAG_EDIT
@@ -253,7 +254,7 @@ class AppFlowTest {
     fun i9_noSetsDialogKeepsExercise() {
         tapText("Начать тренировку")
         tapText("Добавить упражнение")
-        pickExercise("Подтягивания")
+        pickExercise("Тяга верхнего блока")
 
         tapText("Завершить упражнение")
         displayed("Подходов нет")
@@ -352,9 +353,9 @@ class AppFlowTest {
         tapText("Широчайшие")
         countTag(TAG_MUSCLE_ROW, 5)
 
-        tapText("Подтягивания")
+        tapText("Тяга верхнего блока")
         displayed("← Мышцы")
-        displayed("Подтягивания")
+        displayed("Тяга верхнего блока")
         displayed("Фото")
         displayed("История упражнения")
         // Подход из третьей тренировки (i9).
@@ -370,15 +371,15 @@ class AppFlowTest {
         countTag(TAG_MUSCLE_ROW, 5)
 
         // Карандаш: форма редактирования, название уже заполнено.
-        tapText("Подтягивания")
+        tapText("Тяга верхнего блока")
         tapTag(TAG_EDIT)
         displayed("Редактировать упражнение")
-        fieldHas(TAG_FORM_NAME, "Подтягивания")
-        typeInto(TAG_FORM_NAME, "Подтягивания широким хватом")
+        fieldHas(TAG_FORM_NAME, "Тяга верхнего блока")
+        typeInto(TAG_FORM_NAME, "Тяга блока сверху")
         tapTag(TAG_SAVE)
         // Форма редактирования открыта из карточки: сохранение возвращает на карточку.
         displayed("← Мышцы")
-        displayed("Подтягивания широким хватом")
+        displayed("Тяга блока сверху")
 
         // Удаление: «Отмена» оставляет карточку, «Удалить» скрывает упражнение.
         tapTag(TAG_DELETE)
@@ -400,8 +401,8 @@ class AppFlowTest {
         tapTab("Мышцы")
         openArea("Спина")
         tapText("Большая круглая")
-        // После m13 «Подтягивания» удалено: остаются Пуловер и Разведение гантелей в наклоне.
-        countTag(TAG_MUSCLE_ROW, 2)
+        // После m13 «Тяга верхнего блока» удалена: Пуловер, Подтягивания, Разведение гантелей в наклоне.
+        countTag(TAG_MUSCLE_ROW, 3)
 
         tapTag(TAG_ADD_EXERCISE)
         displayed("← Мышцы")
@@ -430,7 +431,7 @@ class AppFlowTest {
         tapTag(TAG_SAVE)
         displayed("Мышцы")
         // Упражнение создано с основной «Большая круглая» — оно в списке этой мышцы.
-        countTag(TAG_MUSCLE_ROW, 3)
+        countTag(TAG_MUSCLE_ROW, 4)
         displayed("Тяга блока сверху")
     }
 
@@ -440,7 +441,7 @@ class AppFlowTest {
         tapTab("Мышцы")
         openArea("Спина")
         tapText("Большая круглая")
-        countTag(TAG_MUSCLE_ROW, 3)
+        countTag(TAG_MUSCLE_ROW, 4)
 
         tapText("Тяга блока сверху")
         displayed("← Мышцы")
@@ -641,6 +642,37 @@ class AppFlowTest {
         // Часть 4: «Назад» — возврат на Журнал, затем на Тренировку.
         device.pressBack()
         displayed("Журнал")
+        device.pressBack()
+        displayed("Начать тренировку")
+    }
+
+    /** r21. Упражнение без веса: чип по повторам, поле «Вес» отсутствует, тоннаж 0. */
+    @Test
+    fun r21_bodyweightExerciseChipAndNoWeightField() {
+        tapText("Начать тренировку")
+        tapText("Добавить упражнение")
+        pickExercise("Подтягивания")
+
+        // Поле «Вес» отсутствует — только «Повторы».
+        compose.onNodeWithTag(TAG_WEIGHT).assertDoesNotExist()
+        compose.onNodeWithTag(TAG_REPS).assertIsDisplayed()
+
+        typeInto(TAG_REPS, "12")
+        tapText("Добавить подход")
+        displayed("12 повт.")
+
+        tapText("Завершить упражнение")
+        tapText("Завершить тренировку")
+        tapText("Завершить")
+
+        // Тоннаж: упражнения без веса дают 0 — тренировка показывает 0 кг.
+        tapTab("Журнал")
+        compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
+        displayed("← Журнал")
+        displayed("12 повт.")
+        displayedInLabel("0 кг")
+
+        tapText("← Журнал")
         device.pressBack()
         displayed("Начать тренировку")
     }

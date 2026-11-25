@@ -229,9 +229,13 @@ private fun ExerciseBlockCard(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 block.sets.forEach { set ->
+                    val chipLabel = if (block.isBodyweight)
+                        "${set.reps} повт."
+                    else
+                        "${formatWeight(set.weightKg)} кг × ${set.reps}"
                     SetChip(
-                        "${formatWeight(set.weightKg)} кг × ${set.reps}",
-                        onClick = { vm.openEditSet(block.blockId, set.id, set.weightKg, set.reps) },
+                        chipLabel,
+                        onClick = { vm.openEditSet(block.blockId, set.id, set.weightKg, set.reps, block.isBodyweight) },
                     )
                 }
             }
@@ -243,26 +247,37 @@ private fun ExerciseBlockCard(
                     .fillMaxWidth()
                     .padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 12.dp),
             ) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
+                if (block.isBodyweight) {
                     NumericField(
                         label = "Повторы",
                         value = session.repsInput,
                         onValueChange = { vm.setRepsInput(it) },
                         accentBorder = false,
                         testTag = TAG_REPS,
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.fillMaxWidth(),
                     )
-                    NumericField(
-                        label = "Вес",
-                        value = session.weightInput,
-                        onValueChange = { vm.setWeightInput(it) },
-                        accentBorder = session.weightPrefilled,
-                        testTag = TAG_WEIGHT,
-                        modifier = Modifier.weight(1f),
-                    )
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        NumericField(
+                            label = "Повторы",
+                            value = session.repsInput,
+                            onValueChange = { vm.setRepsInput(it) },
+                            accentBorder = false,
+                            testTag = TAG_REPS,
+                            modifier = Modifier.weight(1f),
+                        )
+                        NumericField(
+                            label = "Вес",
+                            value = session.weightInput,
+                            onValueChange = { vm.setWeightInput(it) },
+                            accentBorder = session.weightPrefilled,
+                            testTag = TAG_WEIGHT,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
                 Spacer(Modifier.height(10.dp))
                 PrimaryButton("Добавить подход", onClick = { vm.addSet() })
@@ -301,26 +316,37 @@ private fun EditSetDialog(vm: WorkoutsViewModel, state: WorkoutUiState) {
                 textAlign = TextAlign.Center,
                 color = palette.text,
             )
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                NumericField(
-                    label = "Вес",
-                    value = state.editWeight,
-                    onValueChange = { vm.setEditWeight(it) },
-                    accentBorder = false,
-                    testTag = TAG_EDIT_WEIGHT,
-                    modifier = Modifier.weight(1f),
-                )
+            if (state.editIsBodyweight) {
                 NumericField(
                     label = "Повторы",
                     value = state.editReps,
                     onValueChange = { vm.setEditReps(it) },
                     accentBorder = false,
                     testTag = TAG_EDIT_REPS,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                 )
+            } else {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    NumericField(
+                        label = "Вес",
+                        value = state.editWeight,
+                        onValueChange = { vm.setEditWeight(it) },
+                        accentBorder = false,
+                        testTag = TAG_EDIT_WEIGHT,
+                        modifier = Modifier.weight(1f),
+                    )
+                    NumericField(
+                        label = "Повторы",
+                        value = state.editReps,
+                        onValueChange = { vm.setEditReps(it) },
+                        accentBorder = false,
+                        testTag = TAG_EDIT_REPS,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
             Spacer(Modifier.height(10.dp))
             PrimaryButton("Сохранить", onClick = { vm.saveEditSet() })

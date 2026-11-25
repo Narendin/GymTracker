@@ -146,6 +146,16 @@ fun ExerciseCardScreen(
             // Под фото только подпись «Фото».
             Text("Фото", fontSize = 13.sp, color = palette.muted)
 
+            // Read-only indicator: bodyweight toggle state.
+            if (state.isBodyweight) {
+                Text(
+                    "Без дополнительного веса",
+                    fontSize = 13.sp,
+                    color = palette.accent,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+
             // Цветовая разметка мышц: основные акцентом, вторичные контуром, подписей нет.
             if (state.muscles.isNotEmpty()) {
                 FlowRow(
@@ -172,7 +182,7 @@ fun ExerciseCardScreen(
                 }
             }
 
-            WeightGraph(state.points)
+            WeightGraph(state.points, state.isBodyweight)
 
             Text("История упражнения", fontSize = 15.sp, color = palette.text, modifier = Modifier.padding(top = 4.dp))
             state.history.forEach { row ->
@@ -248,11 +258,11 @@ private fun PlusInCircle() {
 }
 
 /**
- * График максимального веса по датам: окно по умолчанию 20 точек, листается свайпом,
+ * График максимального веса (или повторов) по датам: окно по умолчанию 20 точек, листается свайпом,
  * y-ось подстраивается под видимое окно, тап по точке показывает значение и дату.
  */
 @Composable
-private fun WeightGraph(points: List<WeightPoint>) {
+private fun WeightGraph(points: List<WeightPoint>, isBodyweight: Boolean) {
     val palette = LocalGymPalette.current
     val window = 20
     var offset by remember(points) { mutableStateOf(0) }
@@ -296,14 +306,17 @@ private fun WeightGraph(points: List<WeightPoint>) {
                 )
                 return@Canvas
             }
-            val minW = visible.minOf { it.maxWeight } * 0.92
-            val maxW = visible.maxOf { it.maxWeight } * 1.08
+            val values = if (isBodyweight) visible.map { it.maxReps.toDouble() }
+                else visible.map { it.maxWeight }
+            val minW = values.min() * 0.92
+            val maxW = values.max() * 1.08
             val spread = maxW - minW
             val stepX = if (visible.size > 1) w / (visible.size - 1) else w
             val pts = visible.mapIndexed { i, p ->
+                val v = if (isBodyweight) p.maxReps.toDouble() else p.maxWeight
                 Offset(
                     if (visible.size == 1) w / 2f else i * stepX,
-                    h - ((p.maxWeight - minW) / spread).toFloat() * h,
+                    h - ((v - minW) / spread).toFloat() * h,
                 )
             }
             val line = Path().apply {
@@ -318,23 +331,27 @@ private fun WeightGraph(points: List<WeightPoint>) {
                     drawCircle(palette.text, radius = 6.dp.toPx(), center = pts[idx], style = Stroke(width = 1.dp.toPx()))
                 }
             }
+            val topLabel = if (isBodyweight) "${maxW.toInt()} повт." else formatWeight(maxW)
+            val botLabel = if (isBodyweight) "${minW.toInt()} повт." else formatWeight(minW)
             drawText(
                 textMeasurer = textMeasurer,
-                text = formatWeight(maxW),
+                text = topLabel,
                 style = TextStyle(fontSize = 11.sp, color = palette.muted),
                 topLeft = Offset(2.dp.toPx(), 2.dp.toPx()),
             )
             drawText(
                 textMeasurer = textMeasurer,
-                text = formatWeight(minW),
+                text = botLabel,
                 style = TextStyle(fontSize = 11.sp, color = palette.muted),
                 topLeft = Offset(2.dp.toPx(), h - 14.dp.toPx()),
             )
         }
         val shown = selected
         if (shown != null) {
+            val valueLabel = if (isBodyweight) "${shown.maxReps} повт."
+                else "${formatWeight(shown.maxWeight)} кг"
             Text(
-                "${formatWeight(shown.maxWeight)} кг · ${formatDateFull(shown.dateMillis)}",
+                "$valueLabel · ${formatDateFull(shown.dateMillis)}",
                 fontSize = 13.sp,
                 color = palette.text,
                 modifier = Modifier.padding(top = 6.dp),

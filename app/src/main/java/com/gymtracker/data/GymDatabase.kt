@@ -20,7 +20,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ChangeGroup::class,
         ChangePhoto::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(GymConverters::class)
@@ -39,6 +39,13 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /** v3: упражнения без дополнительного веса. */
+        private val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE exercise ADD COLUMN isBodyweight INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         fun get(context: Context): GymDatabase =
             Room.databaseBuilder(context.applicationContext, GymDatabase::class.java, DB_NAME)
                 .addCallback(object : RoomDatabase.Callback() {
@@ -46,7 +53,7 @@ abstract class GymDatabase : RoomDatabase() {
                         Seed.statements().forEach { db.execSQL(it) }
                     }
                 })
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
     }
 }

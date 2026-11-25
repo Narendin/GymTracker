@@ -29,6 +29,7 @@ data class BlockUi(
     val isActive: Boolean,
     /** «↻» видна только на последнем завершённом блоке при отсутствии активного упражнения (A3a). */
     val showResume: Boolean,
+    val isBodyweight: Boolean,
 )
 
 data class SessionUi(
@@ -57,6 +58,7 @@ data class WorkoutUiState(
     val editSetId: Long? = null,
     val editWeight: String = "",
     val editReps: String = "",
+    val editIsBodyweight: Boolean = false,
 )
 
 private data class Base(
@@ -79,6 +81,7 @@ private data class EditState(
     val setId: Long?,
     val weight: String,
     val reps: String,
+    val isBodyweight: Boolean,
 )
 
 @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
@@ -94,6 +97,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     private val editSetId = MutableStateFlow<Long?>(null)
     private val editWeight = MutableStateFlow("")
     private val editReps = MutableStateFlow("")
+    private val editIsBodyweight = MutableStateFlow(false)
 
     private val bound30 = Instant.now().minus(30, ChronoUnit.DAYS).toEpochMilli()
 
@@ -104,7 +108,8 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                     val session = repo.activeSessionOnce()
                     if (session != null) {
                         repo.addExerciseToSession(session.id, picked)
-                        prefillFor(picked)
+                        val exercise = repo.exerciseByIdOnce(picked)
+                        prefillFor(picked, exercise?.isBodyweight ?: false)
                     }
                     repo.clearPickerResult()
                 }
@@ -112,12 +117,19 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
         }
     }
 
-    private suspend fun prefillFor(exerciseId: Long) {
-        val lastW = repo.lastWeightForExercise(exerciseId)
-        val lastR = repo.lastRepsForExercise(exerciseId)
-        weightInput.value = lastW?.let { formatWeight(it) } ?: ""
-        repsInput.value = lastR?.toString() ?: "10"
-        weightPrefilled.value = true
+    private suspend fun prefillFor(exerciseId: Long, isBodyweight: Boolean) {
+        if (isBodyweight) {
+            val lastR = repo.lastRepsForExercise(exerciseId)
+            weightInput.value = ""
+            repsInput.value = lastR?.toString() ?: "10"
+            weightPrefilled.value = false
+        } else {
+            val lastW = repo.lastWeightForExercise(exerciseId)
+            val lastR = repo.lastRepsForExercise(exerciseId)
+            weightInput.value = lastW?.let { formatWeight(it) } ?: ""
+            repsInput.value = lastR?.toString() ?: "10"
+            weightPrefilled.value = true
+        }
     }
 
     val uiState: StateFlow<WorkoutUiState> = combine(
@@ -155,8 +167,8 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                         Quint(blocks, reps, weight, prefilled, confirm)
                     },
                     noSetsBlockId,
-                    combine(editBlockId, editSetId, editWeight, editReps) { b, s, w, r ->
-                        EditState(b, s, w, r)
+                    combine(editBlockId, editSetId, editWeight, editReps, editIsBodyweight) { b, s, w, r, bw ->
+                        EditState(b, s, w, r, bw)
                     },
                 ) { q, noSets, edit ->
                     WorkoutUiState(
@@ -171,6 +183,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                         editSetId = edit.setId,
                         editWeight = edit.weight,
                         editReps = edit.reps,
+                        editIsBodyweight = edit.isBodyweight,
                     )
                 }
             }
@@ -198,6 +211,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                 sets = b.sets.sortedBy { it.orderInExercise },
                 isActive = b.block.status == BlockStatus.ACTIVE,
                 showResume = b.block.status == BlockStatus.DONE && b.block.id == lastDoneId,
+                isBodyweight = b.exercise.isBodyweight,
             )
         }
         return SessionUi(
@@ -268,7 +282,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
             val session = uiState.value.session ?: return@launch
             val block = session.blocks.firstOrNull { it.blockId == blockId } ?: return@launch
             repo.resumeBlock(blockId)
-            prefillFor(block.exerciseId)
+            prefillFor(block.exerciseId, block.isBodyweight)
         }
     }
 
@@ -299,11 +313,12 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     // ——— Правка и удаление подхода ———
 
     /** Открыть диалог правки: подставить текущие значения подхода. */
-    fun openEditSet(blockId: Long, setId: Long, weightKg: Double, reps: Int) {
+    fun openEditSet(blockId: Long, setId: Long, weightKg: Double, reps: Int, isBodyweight: Boolean) {
         editBlockId.value = blockId
         editSetId.value = setId
-        editWeight.value = formatWeight(weightKg)
+        editWeight.value = if (isBodyweight) "" else formatWeight(weightKg)
         editReps.value = reps.toString()
+        editIsBodyweight.value = isBodyweight
     }
 
     fun setEditWeight(text: String) {
@@ -318,7 +333,8 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     fun saveEditSet() {
         val setId = editSetId.value ?: return
         val reps = editReps.value.toIntOrNull() ?: return
-        val weight = editWeight.value.replace(',', '.').toDoubleOrNull() ?: return
+        val weight = if (editIsBodyweight.value) 0.0
+            else editWeight.value.replace(',', '.').toDoubleOrNull() ?: return
         if (reps <= 0) return
         viewModelScope.launch {
             repo.editSet(setId, weight, reps)
@@ -351,5 +367,6 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
         editSetId.value = null
         editWeight.value = ""
         editReps.value = ""
+        editIsBodyweight.value = false
     }
 }

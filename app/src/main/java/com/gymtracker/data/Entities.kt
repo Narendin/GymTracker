@@ -42,6 +42,8 @@ data class Exercise(
     val isDeleted: Boolean = false,
     /** C1: упражнение скрыто с экрана «Мышцы» (в блоке «Скрытое» своей группы). */
     val isHidden: Boolean = false,
+    /** Упражнение выполняется без внешнего веса: чипы по повторам, тоннаж 0. */
+    val isBodyweight: Boolean = false,
 )
 
 @Entity(
