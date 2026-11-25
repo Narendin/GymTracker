@@ -159,6 +159,7 @@ fun GymApp(container: AppContainer) {
                     vm = container.historyVm,
                     onOpenExercise = { id -> pushCard(id, "← Детали тренировки") },
                     onCloseDetail = ::pop,
+                    onDeleted = ::pop,
                 )
                 is Nav.Tab -> when (entry.tab) {
                     AppTab.WORKOUT -> WorkoutScreen(

@@ -172,10 +172,10 @@ class HistoryViewModel(private val repo: GymRepository) : ViewModel() {
 
     fun confirmDelete() {
         val id = detailId.value ?: return
+        showDeleteConfirm.value = false
+        detailId.value = null
         viewModelScope.launch {
             repo.deleteSession(id)
-            showDeleteConfirm.value = false
-            detailId.value = null
         }
     }
 
