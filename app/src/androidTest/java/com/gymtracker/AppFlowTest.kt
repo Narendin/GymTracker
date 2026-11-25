@@ -122,14 +122,14 @@ class AppFlowTest {
 
         typeInto(TAG_WEIGHT, "40")
         tapText("Добавить подход")
-        displayed("40 кг × 10")
+        displayed("10 × 40 кг")
         // Следующий подход подставляет значение этого подхода.
         fieldHas(TAG_WEIGHT, "40")
 
         tapText("Завершить упражнение")
         // Блок свёрнут: поля ввода исчезли, чип остался.
         fieldGone(TAG_REPS)
-        displayed("40 кг × 10")
+        displayed("10 × 40 кг")
 
         tapText("Завершить тренировку")
         displayed("Завершить тренировку?")
@@ -149,7 +149,7 @@ class AppFlowTest {
         displayed("← Журнал")
         displayed(todayFull())
         displayed("1 упражнение · 400 кг")
-        displayed("40 кг × 10")
+        displayed("10 × 40 кг")
         displayed("Удалить тренировку")
 
         tapText("← Журнал")
@@ -190,7 +190,7 @@ class AppFlowTest {
         pickExercise("Приседания со штангой")
         typeInto(TAG_WEIGHT, "60")
         tapText("Добавить подход")
-        displayed("60 кг × 10")
+        displayed("10 × 60 кг")
         tapText("Завершить упражнение")
 
         // A3a: активного блока нет — нижние кнопки возвращаются.
@@ -199,7 +199,7 @@ class AppFlowTest {
         typeInto(TAG_WEIGHT, "20")
         typeInto(TAG_REPS, "12")
         tapText("Добавить подход")
-        displayed("20 кг × 12")
+        displayed("12 × 20 кг")
         tapText("Завершить упражнение")
 
         tapText("Завершить тренировку")
@@ -222,8 +222,8 @@ class AppFlowTest {
         compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
         displayed("← Журнал")
         displayed("2 упражнения · 840 кг")
-        displayed("60 кг × 10")
-        displayed("20 кг × 12")
+        displayed("10 × 60 кг")
+        displayed("12 × 20 кг")
 
         tapText("← Журнал")
         device.pressBack()
@@ -263,7 +263,7 @@ class AppFlowTest {
         compose.waitUntil(30_000) { compose.onNodeWithTag(TAG_REPS).isDisplayed() }
         typeInto(TAG_WEIGHT, "0")
         tapText("Добавить подход")
-        displayed("0 кг × 10")
+        displayed("10 × 0 кг")
 
         tapText("Завершить упражнение")
         tapText("Завершить тренировку")
@@ -360,12 +360,12 @@ class AppFlowTest {
         displayed("История упражнения")
         // Подход из третьей тренировки (i9).
         countTag(TAG_CARD_HISTORY_ROW, 1)
-        displayed("0 кг × 10")
+        displayed("10 × 0 кг")
 
         // Строка истории ведёт в детали тренировки.
         tapTag(TAG_CARD_HISTORY_ROW)
         displayed("← Журнал")
-        displayed("0 кг × 10")
+        displayed("10 × 0 кг")
         tapText("← Журнал")
         displayed("Мышцы")
         countTag(TAG_MUSCLE_ROW, 5)
@@ -468,10 +468,10 @@ class AppFlowTest {
         typeInto(TAG_WEIGHT, "50")
         typeInto(TAG_REPS, "8")
         tapText("Добавить подход")
-        displayed("50 кг × 8")
+        displayed("8 × 50 кг")
 
         // Тап по чипу открывает диалог правки с текущими значениями.
-        tapText("50 кг × 8")
+        tapText("8 × 50 кг")
         displayed("Правка подхода")
         fieldHas(TAG_EDIT_WEIGHT, "50")
         fieldHas(TAG_EDIT_REPS, "8")
@@ -484,7 +484,7 @@ class AppFlowTest {
         tapText("Сохранить")
 
         // Чип обновлён, диалог закрыт.
-        displayed("60 кг × 8")
+        displayed("8 × 60 кг")
         compose.onNodeWithText("Правка подхода").assertDoesNotExist()
 
         // Завершить упражнение и тренировку — тоннаж пересчитан (60×8=480).
@@ -511,17 +511,17 @@ class AppFlowTest {
         typeInto(TAG_WEIGHT, "80")
         typeInto(TAG_REPS, "5")
         tapText("Добавить подход")
-        displayed("80 кг × 5")
+        displayed("5 × 80 кг")
 
         typeInto(TAG_WEIGHT, "90")
         tapText("Добавить подход")
-        displayed("90 кг × 5")
+        displayed("5 × 90 кг")
 
         // Завершить блок — чипы кликабельны в свёрнутом блоке.
         tapText("Завершить упражнение")
 
-        // Тап по первому чипу (80 кг × 5) — диалог правки.
-        tapText("80 кг × 5")
+        // Тап по первому чипу (5 × 80 кг) — диалог правки.
+        tapText("5 × 80 кг")
         displayed("Правка подхода")
         fieldHas(TAG_EDIT_WEIGHT, "80")
         fieldHas(TAG_EDIT_REPS, "5")
@@ -529,9 +529,9 @@ class AppFlowTest {
         // Удалить подход.
         tapText("Удалить")
 
-        // Чип «80 кг × 5» исчез, «90 кг × 5» остался.
-        compose.onNodeWithText("80 кг × 5").assertDoesNotExist()
-        displayed("90 кг × 5")
+        // Чип «5 × 80 кг» исчез, «5 × 90 кг» остался.
+        compose.onNodeWithText("5 × 80 кг").assertDoesNotExist()
+        displayed("5 × 90 кг")
 
         tapText("Завершить тренировку")
         tapText("Завершить")
@@ -554,10 +554,10 @@ class AppFlowTest {
         typeInto(TAG_WEIGHT, "30")
         typeInto(TAG_REPS, "10")
         tapText("Добавить подход")
-        displayed("30 кг × 10")
+        displayed("10 × 30 кг")
 
         // Удалить единственный подход через диалог.
-        tapText("30 кг × 10")
+        tapText("10 × 30 кг")
         displayed("Правка подхода")
         tapText("Удалить")
 
@@ -580,8 +580,8 @@ class AppFlowTest {
         compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
         displayed("← Журнал")
 
-        // Чип «90 кг × 5» из p17 — есть, но не кликабельный.
-        val chip = compose.onNodeWithText("90 кг × 5")
+        // Чип «5 × 90 кг» из p17 — есть, но не кликабельный.
+        val chip = compose.onNodeWithText("5 × 90 кг")
         compose.waitUntil(30_000) { chip.isDisplayed() }
         chip.assertIsDisplayed()
         chip.assert(hasClickAction().not())
