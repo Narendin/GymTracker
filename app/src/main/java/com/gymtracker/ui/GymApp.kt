@@ -192,7 +192,7 @@ fun GymApp(container: AppContainer) {
                         onOpenExercise = { id -> pushCard(id, "← Мышцы") },
                     )
                     AppTab.CHANGES -> ChangesScreen(container.changesVm)
-                    AppTab.SETTINGS -> SettingsScreen(container.settings)
+                    AppTab.SETTINGS -> SettingsScreen(container.settings, container.updateVm)
                 }
             }
         }
