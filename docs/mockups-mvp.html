@@ -35,6 +35,8 @@
   .exName{flex:1; min-width:0; font-size:15px; line-height:1.25; display:-webkit-box;
     -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
   .exState{font-size:12px; color:var(--muted); white-space:nowrap;}
+  .chev{margin-left:auto; color:var(--muted); font-size:17px; flex:none;}
+  .chev.open{transform:rotate(90deg);}
   .doneLabel{color:var(--accent);}
   .chips{display:flex; gap:6px; padding:0 12px 10px; flex-wrap:wrap;}
   .chip{font-size:13px; color:var(--text); background:#121419; border-radius:12px; padding:5px 9px;}
@@ -208,24 +210,18 @@
         <div class="content">
           <div class="exBlock">
             <div class="exHeader"><span class="thumb">фото</span>
-              <span class="exName">Жим штанги лёжа</span></div>
-            <div class="chips">
-              <span class="chip">5 × 85 кг</span>
-              <span class="chip">5 × 85 кг</span>
-              <span class="chip">6 × 80 кг</span>
-            </div>
+              <span class="exName">Жим штанги лёжа</span>
+              <span class="chev">›</span></div>
           </div>
           <div class="exBlock">
             <div class="exHeader"><span class="thumb">фото</span>
-              <span class="exName">Подтягивания</span></div>
-            <div class="chips">
-              <span class="chip">12 повт.</span>
-              <span class="chip">10 повт.</span>
-            </div>
+              <span class="exName">Подтягивания</span>
+              <span class="chev">›</span></div>
           </div>
           <div class="exBlock active">
             <div class="exHeader"><span class="thumb">фото</span>
-              <span class="exName">Тяга горизонтального блока сидя</span></div>
+              <span class="exName">Тяга горизонтального блока сидя</span>
+              <span class="chev open">›</span></div>
             <div class="chips">
               <span class="chip">8 × 40 кг</span>
               <span class="chip">8 × 40 кг</span>
@@ -248,7 +244,7 @@
           <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm7.43 4.97c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.24l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.29 2 14.09 2h-4c-.2 0-.37.18-.41.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.22-.07-.49.02-.61.24l-2 3.46c-.13.22-.06.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.31.61.24l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.04.24.21.42.41.42h4c.2 0 .37-.18.41-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.22.07.49-.02.61-.24l2-3.46c.12-.22.06-.49-.12-.64l-2.11-1.66z"/></svg></div>
         </div>
       </div>
-      <div class="label">A3. Активная сессия — активный блок раскрыт, завершённые свёрнуты; «↻» не показывается, пока есть активное упражнение, нижние кнопки скрыты; у упражнения без веса чип «12 повт.» без килограммов</div>
+      <div class="label">A3. Активная сессия — завершённые блоки свёрнуты в одну строку (миниатюра, название, шеврон), подходы не показаны; шеврон и тап по строке переключают раскрытие; активный раскрыт (шеврон открыт), «↻» не показывается, пока есть активное упражнение, нижние кнопки скрыты; у упражнения без веса чип «12 повт.» без килограммов</div>
     </div>
 
     <!-- A3a. Нет активного упражнения, все завершены -->
@@ -259,21 +255,18 @@
         <div class="content">
           <div class="exBlock">
             <div class="exHeader"><span class="thumb">фото</span>
-              <span class="exName">Жим штанги лёжа</span></div>
-            <div class="chips">
-              <span class="chip">5 × 85 кг</span>
-              <span class="chip">5 × 85 кг</span>
-              <span class="chip">6 × 80 кг</span>
-            </div>
+              <span class="exName">Жим штанги лёжа</span>
+              <span class="chev">›</span></div>
           </div>
           <div class="exBlock">
             <div class="exHeader"><span class="thumb">фото</span>
               <span class="exName">Тяга горизонтального блока сидя</span>
-              <span class="iconBtn" style="margin-left:auto">↻</span></div>
+              <span class="chev open">›</span></div>
             <div class="chips">
               <span class="chip">8 × 40 кг</span>
               <span class="chip">8 × 40 кг</span>
             </div>
+            <div style="padding:0 12px 10px"><span class="iconBtn">↻</span></div>
           </div>
           <div class="btn btnPrimary" style="margin-top:6px">Добавить упражнение</div>
           <div class="btn btnSecondary" style="margin-top:10px">Завершить тренировку</div>
@@ -286,7 +279,7 @@
           <div class="tab"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M12 8c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm7.43 4.97c.04-.32.07-.64.07-.97s-.03-.66-.07-1l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.24l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.29 2 14.09 2h-4c-.2 0-.37.18-.41.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.22-.07-.49.02-.61.24l-2 3.46c-.13.22-.06.49.12.64L4.57 11c-.04.34-.07.67-.07 1s.03.65.07.97l-2.11 1.66c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.31.61.24l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.04.24.21.42.41.42h4c.2 0 .37-.18.41-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.22.07.49-.02.61-.24l2-3.46c.12-.22.06-.49-.12-.64l-2.11-1.66z"/></svg></div>
         </div>
       </div>
-      <div class="label">A3a. Нет активного упражнения — нижние кнопки возвращаются, иконка «↻» только на последнем завершённом блоке</div>
+      <div class="label">A3a. Нет активного упражнения — нижние кнопки возвращаются, «↻» только на последнем завершённом блоке, внутри раскрытого блока (последний раскрыт шевроном, остальные свёрнуты)</div>
     </div>
 
     <!-- A5. Диалог подтверждения завершения тренировки -->
