@@ -165,7 +165,6 @@ fun GymApp(container: AppContainer) {
                     AppTab.WORKOUT -> WorkoutScreen(
                         vm = container.workoutsVm,
                         onOpenPicker = { nav.add(Nav.Picker) },
-                        onOpenExercise = { id -> pushCard(id, "← Тренировка") },
                         // Счётчики A1: таб «Журнал» добавляем в стек, фильтр выставляем до перехода,
                         // «Назад» возвращает на A1, состояние вкладки не сбрасывается.
                         onOpenLastWorkout = { sessionId ->

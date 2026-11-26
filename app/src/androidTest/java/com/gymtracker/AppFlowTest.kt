@@ -688,6 +688,104 @@ class AppFlowTest {
         displayed("Начать тренировку")
     }
 
+    /** s22. Активный блок сворачивается в одну строку и раскрывается шевроном. */
+    @Test
+    fun s22_activeBlockCollapseAndExpand() {
+        tapText("Начать тренировку")
+        tapText("Добавить упражнение")
+        pickExercise("Жим гантелей лёжа")
+
+        // Активный блок по умолчанию раскрыт: поля ввода на месте.
+        compose.onNodeWithTag(TAG_REPS).assertIsDisplayed()
+        typeInto(TAG_REPS, "10")
+        typeInto(TAG_WEIGHT, "25")
+        tapText("Добавить подход")
+        displayed("10 × 25 кг")
+        // Добавление подхода раскрытие не меняет — блок остаётся открытым.
+        compose.onNodeWithTag(TAG_REPS).assertIsDisplayed()
+
+        // Шеврон сворачивает активный блок: поля и кнопки исчезают, чипы скрыты.
+        tapTag(TAG_CHEVRON)
+        fieldGone(TAG_REPS)
+        fieldGone(TAG_WEIGHT)
+        compose.onNodeWithText("10 × 25 кг").assertDoesNotExist()
+        compose.onNodeWithText("Добавить подход").assertDoesNotExist()
+        // Свёрнутый активный блок — правило A3: нижние кнопки скрыты, «↻» нет.
+        compose.onNodeWithText("Добавить упражнение").assertDoesNotExist()
+        compose.onNodeWithText("Завершить тренировку").assertDoesNotExist()
+        compose.onNodeWithText("↻").assertDoesNotExist()
+
+        // Тап по строке активного блока раскрывает его, как шеврон, и подход
+        // не добавляет; тап по строке раскрытого блока сворачивает обратно.
+        tapTag(TAG_BLOCK_ROW)
+        fieldHas(TAG_REPS, "10")
+        fieldHas(TAG_WEIGHT, "25")
+        displayed("10 × 25 кг")
+        tapTag(TAG_BLOCK_ROW)
+        fieldGone(TAG_REPS)
+        compose.onNodeWithText("Добавить подход").assertDoesNotExist()
+
+        // Шеврон раскрывает блок: значения полей не сбросились.
+        tapTag(TAG_CHEVRON)
+        fieldHas(TAG_REPS, "10")
+        fieldHas(TAG_WEIGHT, "25")
+        displayed("10 × 25 кг")
+
+        // В раскрытом блоке подход добавляется.
+        typeInto(TAG_REPS, "12")
+        tapText("Добавить подход")
+        displayed("12 × 25 кг")
+
+        // Перезапуск приложения: состояние ViewModel новое, активный блок по
+        // умолчанию снова раскрыт — чипы, поля и кнопки на месте, «↻» нет.
+        compose.activityRule.scenario.onActivity { activity -> activity.recreate() }
+        compose.waitForIdle()
+        compose.onNodeWithTag(TAG_REPS).assertIsDisplayed()
+        displayed("12 × 25 кг")
+        compose.onNodeWithText("↻").assertDoesNotExist()
+        compose.onNodeWithText("Добавить упражнение").assertDoesNotExist()
+
+        tapText("Завершить упражнение")
+        // Завершённый блок свёрнут: чипы скрыты.
+        compose.onNodeWithText("12 × 25 кг").assertDoesNotExist()
+
+        // Второе упражнение: активный блок раскрыт, свёрнутый завершённый
+        // раскрывают шевроном; «↻» не появляется, пока есть активное упражнение.
+        tapText("Добавить упражнение")
+        pickExercise("Приседания со штангой")
+        tapTagIndex(TAG_CHEVRON, 0)
+        displayed("12 × 25 кг")
+        compose.onNodeWithText("↻").assertDoesNotExist()
+
+        typeInto(TAG_WEIGHT, "70")
+        tapText("Добавить подход")
+        displayed("10 × 70 кг")
+
+        tapText("Завершить упражнение")
+        // A3a: активного упражнения нет — нижние кнопки доступны, «↻» появляется
+        // на последнем завершённом блоке в раскрытом виде. Тап по «↻» делает блок
+        // активным и раскрывает, поля подставлены из последнего подхода.
+        compose.onNodeWithText("Добавить упражнение").assertIsDisplayed()
+        tapTagIndex(TAG_CHEVRON, 1)
+        displayed("↻")
+        tapText("↻")
+        compose.onNodeWithText("Добавить упражнение").assertDoesNotExist()
+        fieldHas(TAG_REPS, "10")
+        fieldHas(TAG_WEIGHT, "70")
+        displayed("10 × 70 кг")
+        tapText("Завершить упражнение")
+
+        tapText("Завершить тренировку")
+        displayed("Завершить тренировку?")
+        tapText("Завершить")
+
+        // Тренировка записана: q20 удалил три, r21 и этот шаг добавили по одной.
+        counterValue(TAG_TOTAL, "4")
+        tapTab("Журнал")
+        compose.onAllNodesWithTag(TAG_ROW).assertCountEquals(4)
+        device.pressBack()
+    }
+
     /** Есть ли элемент в дереве (не обязательно виден). */
     private fun exists(text: String): Boolean =
         compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()

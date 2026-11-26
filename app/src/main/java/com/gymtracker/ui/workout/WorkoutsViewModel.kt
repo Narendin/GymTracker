@@ -30,7 +30,7 @@ data class BlockUi(
     /** «↻» видна только на последнем завершённом блоке при отсутствии активного упражнения (A3a). */
     val showResume: Boolean,
     val isBodyweight: Boolean,
-    /** Блок раскрыт: подходы видны. Активный блок раскрыт всегда, независимо от этого поля. */
+    /** Блок раскрыт: подходы, поля и кнопки видны; свёрнутый — одна строка. Активный раскрыт по умолчанию, завершённый свёрнут. */
     val isExpanded: Boolean,
 )
 
@@ -76,7 +76,7 @@ private data class Quint(
     val weight: String,
     val prefilled: Boolean,
     val confirm: Boolean,
-    val expanded: Set<Long>,
+    val toggled: Set<Long>,
 )
 
 private data class EditState(
@@ -95,8 +95,10 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     private val weightPrefilled = MutableStateFlow(true)
     private val finishConfirm = MutableStateFlow(false)
     private val noSetsBlockId = MutableStateFlow<Long?>(null)
-    // id раскрытых завершённых блоков (chevron); живой, сбрасывается между сессиями.
-    private val expandedBlocks = MutableStateFlow<Set<Long>>(emptySet())
+    // id блоков, чьё раскрытие переключил пользователь (шеврон): у активного блока
+    // состояние обратное (по умолчанию раскрыт), у завершённого — прямое (по умолчанию свёрнут).
+    // Живое, сбрасывается между сессиями.
+    private val toggledBlocks = MutableStateFlow<Set<Long>>(emptySet())
     // Состояние диалога правки подхода.
     private val editBlockId = MutableStateFlow<Long?>(null)
     private val editSetId = MutableStateFlow<Long?>(null)
@@ -113,7 +115,8 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                     val session = repo.activeSessionOnce()
                     if (session != null) {
                         val newBlockId = repo.addExerciseToSession(session.id, picked)
-                        expandedBlocks.value = expandedBlocks.value + newBlockId
+                        // Новый активный блок раскрыт по умолчанию.
+                        toggledBlocks.value = toggledBlocks.value - newBlockId
                         val exercise = repo.exerciseByIdOnce(picked)
                         prefillFor(picked, exercise?.isBodyweight ?: false)
                     }
@@ -173,8 +176,8 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                         ) { blocks, reps, weight, prefilled, confirm ->
                             Quint(blocks, reps, weight, prefilled, confirm, emptySet())
                         },
-                        expandedBlocks,
-                    ) { q, expanded -> q.copy(expanded = expanded) },
+                        toggledBlocks,
+                    ) { q, toggled -> q.copy(toggled = toggled) },
                     noSetsBlockId,
                     combine(editBlockId, editSetId, editWeight, editReps, editIsBodyweight) { b, s, w, r, bw ->
                         EditState(b, s, w, r, bw)
@@ -185,7 +188,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                         lastWorkoutLabel = lastLabel,
                         count30 = base.c30,
                         totalCount = base.total,
-                        session = buildSessionUi(session, q.blocks, q.reps, q.weight, q.prefilled, q.expanded),
+                        session = buildSessionUi(session, q.blocks, q.reps, q.weight, q.prefilled, q.toggled),
                         showFinishConfirm = q.confirm,
                         noSetsBlockId = noSets,
                         editSetBlockId = edit.blockId,
@@ -209,20 +212,27 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
         reps: String,
         weight: String,
         prefilled: Boolean,
-        expanded: Set<Long>,
+        toggled: Set<Long>,
     ): SessionUi {
+        val activeId = blocks.firstOrNull { it.block.status == BlockStatus.ACTIVE }?.block?.id
         val lastDoneId = blocks.filter { it.block.status == BlockStatus.DONE }.maxOfOrNull { it.block.id }
         val blocksUi = blocks.map { b ->
+            val isActive = b.block.status == BlockStatus.ACTIVE
             BlockUi(
                 blockId = b.block.id,
                 exerciseId = b.block.exerciseId,
                 name = b.exercise.name,
                 imagePath = b.exercise.imagePath,
                 sets = b.sets.sortedBy { it.orderInExercise },
-                isActive = b.block.status == BlockStatus.ACTIVE,
-                showResume = b.block.status == BlockStatus.DONE && b.block.id == lastDoneId,
+                isActive = isActive,
+                // A3a: «↻» только на последнем завершённом блоке и только когда
+                // активного упражнения нет — иначе возобновление даёт два активных блока.
+                showResume = activeId == null &&
+                    b.block.status == BlockStatus.DONE && b.block.id == lastDoneId,
                 isBodyweight = b.exercise.isBodyweight,
-                isExpanded = b.block.id in expanded,
+                // Активный раскрыт по умолчанию (и после восстановления сессии),
+                // завершённый — свёрнут; переключение пользователя инвертирует дефолт.
+                isExpanded = if (isActive) b.block.id !in toggled else b.block.id in toggled,
             )
         }
         return SessionUi(
@@ -239,15 +249,15 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     fun startSession() {
         viewModelScope.launch {
             repo.startSession()
-            expandedBlocks.value = emptySet()
+            toggledBlocks.value = emptySet()
         }
     }
 
-    /** Шеврон и тап по строке завершённого блока: раскрыть/свернуть bubble-подходы. */
+    /** Шеврон блока: раскрыть/свернуть. Работает и на активном блоке, поля при сворачивании сохраняются. */
     fun toggleExpand(blockId: Long) {
-        expandedBlocks.value =
-            if (blockId in expandedBlocks.value) expandedBlocks.value - blockId
-            else expandedBlocks.value + blockId
+        toggledBlocks.value =
+            if (blockId in toggledBlocks.value) toggledBlocks.value - blockId
+            else toggledBlocks.value + blockId
     }
 
     fun setRepsInput(text: String) {
@@ -266,7 +276,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
         if (reps <= 0) return
         viewModelScope.launch {
             repo.addSet(active, reps, weight)
-            // Следующий подход подставляет значение этого подхода.
+            // Следующий подход подставляет значение этого подхода; раскрытие блока не меняем.
             weightInput.value = formatWeight(weight)
             weightPrefilled.value = true
             repsInput.value = reps.toString()
@@ -281,8 +291,8 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                 noSetsBlockId.value = blockId
             } else {
                 repo.finishBlock(blockId)
-                // Завершённый блок свёрнут по умолчанию: убираем из раскрытых.
-                expandedBlocks.value = expandedBlocks.value - blockId
+                // Завершённый блок свёрнут по умолчанию: снимаем переключение раскрытия.
+                toggledBlocks.value = toggledBlocks.value - blockId
             }
         }
     }
@@ -293,12 +303,17 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
         viewModelScope.launch {
             repo.deleteBlock(blockId)
             noSetsBlockId.value = null
-            expandedBlocks.value = expandedBlocks.value - blockId
+            toggledBlocks.value = toggledBlocks.value - blockId
         }
     }
 
     fun continueExercise() {
+        val blockId = noSetsBlockId.value
         noSetsBlockId.value = null
+        if (blockId != null) {
+            // «Продолжить» — блок остаётся активным и раскрывается: кнопки нужны сразу.
+            toggledBlocks.value = toggledBlocks.value - blockId
+        }
     }
 
     fun resumeBlock(blockId: Long) {
@@ -307,8 +322,8 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
             val block = session.blocks.firstOrNull { it.blockId == blockId } ?: return@launch
             repo.resumeBlock(blockId)
             prefillFor(block.exerciseId, block.isBodyweight)
-            // Активный блок раскрыт всегда; из множества раскрытых завершённых убираем.
-            expandedBlocks.value = expandedBlocks.value - blockId
+            // Возобновлённый блок активен и раскрыт: поля и кнопки нужны сразу.
+            toggledBlocks.value = toggledBlocks.value - blockId
         }
     }
 
@@ -329,7 +344,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
         viewModelScope.launch {
             repo.completeSession(sessionId)
             finishConfirm.value = false
-            expandedBlocks.value = emptySet()
+            toggledBlocks.value = emptySet()
         }
     }
 
