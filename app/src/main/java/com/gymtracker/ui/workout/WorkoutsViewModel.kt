@@ -6,6 +6,9 @@ import com.gymtracker.data.BlockStatus
 import com.gymtracker.data.BlockWithExercise
 import com.gymtracker.data.GymRepository
 import com.gymtracker.data.WorkoutSession
+import com.gymtracker.ui.components.CommentUi
+import com.gymtracker.ui.components.COMMENT_LIMIT
+import com.gymtracker.ui.components.commentLength
 import com.gymtracker.util.formatDateFull
 import com.gymtracker.util.formatDateShort
 import com.gymtracker.util.formatWeight
@@ -32,6 +35,8 @@ data class BlockUi(
     val isBodyweight: Boolean,
     /** Блок раскрыт: подходы, поля и кнопки видны; свёрнутый — одна строка. Активный раскрыт по умолчанию, завершённый свёрнут. */
     val isExpanded: Boolean,
+    /** Комментарий упражнения; null — комментария нет, строка показывает подсказ. */
+    val comment: String?,
 )
 
 data class SessionUi(
@@ -43,8 +48,11 @@ data class SessionUi(
     val weightInput: String,
     /** Подставленное значение (вес из прошлого подхода) — акцентная рамка поля. */
     val weightPrefilled: Boolean,
+    /** Комментарий тренировки; null — комментария нет, строка показывает подсказ. */
+    val comment: String?,
 )
 
+/** Состояние диалога комментария вынесено в ui.components.CommentUi. */
 data class WorkoutUiState(
     val todayLabel: String,
     val lastWorkoutLabel: String? = null,
@@ -61,6 +69,8 @@ data class WorkoutUiState(
     val editWeight: String = "",
     val editReps: String = "",
     val editIsBodyweight: Boolean = false,
+    /** Диалог комментария (тренировка или блок упражнения). */
+    val commentDialog: CommentUi? = null,
 )
 
 private data class Base(
@@ -105,6 +115,9 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     private val editWeight = MutableStateFlow("")
     private val editReps = MutableStateFlow("")
     private val editIsBodyweight = MutableStateFlow(false)
+    // Состояние диалога комментария: поле живёт в состоянии экрана, как поля диалога
+    // правки подхода, — набранный текст должен появляться в поле.
+    private val commentDialog = MutableStateFlow<CommentUi?>(null)
 
     private val bound30 = Instant.now().minus(30, ChronoUnit.DAYS).toEpochMilli()
 
@@ -182,7 +195,8 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                     combine(editBlockId, editSetId, editWeight, editReps, editIsBodyweight) { b, s, w, r, bw ->
                         EditState(b, s, w, r, bw)
                     },
-                ) { q, noSets, edit ->
+                    commentDialog,
+                ) { q, noSets, edit, comment ->
                     WorkoutUiState(
                         todayLabel = today,
                         lastWorkoutLabel = lastLabel,
@@ -196,6 +210,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                         editWeight = edit.weight,
                         editReps = edit.reps,
                         editIsBodyweight = edit.isBodyweight,
+                        commentDialog = comment,
                     )
                 }
             }
@@ -233,6 +248,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                 // Активный раскрыт по умолчанию (и после восстановления сессии),
                 // завершённый — свёрнут; переключение пользователя инвертирует дефолт.
                 isExpanded = if (isActive) b.block.id !in toggled else b.block.id in toggled,
+                comment = b.block.comment,
             )
         }
         return SessionUi(
@@ -243,6 +259,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
             repsInput = reps,
             weightInput = weight,
             weightPrefilled = prefilled,
+            comment = session.comment,
         )
     }
 
@@ -345,6 +362,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
             repo.completeSession(sessionId)
             finishConfirm.value = false
             toggledBlocks.value = emptySet()
+            commentDialog.value = null
         }
     }
 
@@ -410,5 +428,61 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
         editWeight.value = ""
         editReps.value = ""
         editIsBodyweight.value = false
+    }
+
+    // ——— Комментарии тренировки и упражнения ———
+
+    /** Открыть диалог комментария: blockId = null — комментарий тренировки. */
+    fun openComment(blockId: Long?) {
+        val session = uiState.value.session ?: return
+        val text = if (blockId == null) {
+            session.comment
+        } else {
+            session.blocks.firstOrNull { it.blockId == blockId }?.comment
+        }
+        commentDialog.value = CommentUi(isSession = blockId == null, blockId = blockId, text = text ?: "")
+    }
+
+    /** Ввод поля диалога: изменение, выходящее за лимит, отклоняется — поле не
+     * меняется, знак, набитый после 250-го, не попадает в комментарий. */
+    fun setCommentText(text: String) {
+        val dialog = commentDialog.value ?: return
+        if (commentLength(text) > COMMENT_LIMIT) return
+        commentDialog.value = dialog.copy(text = text)
+    }
+
+    /** «Сохранить»: пустое поле записывает отсутствие комментария. */
+    fun saveComment() {
+        val dialog = commentDialog.value ?: return
+        val value = dialog.text.trim().ifEmpty { null }
+        viewModelScope.launch {
+            if (dialog.isSession) {
+                val sessionId = uiState.value.session?.sessionId ?: return@launch
+                repo.setSessionComment(sessionId, value)
+            } else {
+                val blockId = dialog.blockId ?: return@launch
+                repo.setExerciseComment(blockId, value)
+            }
+            commentDialog.value = null
+        }
+    }
+
+    /** «Удалить»: очищает комментарий; строка остаётся с подсказом. */
+    fun clearComment() {
+        val dialog = commentDialog.value ?: return
+        viewModelScope.launch {
+            if (dialog.isSession) {
+                val sessionId = uiState.value.session?.sessionId ?: return@launch
+                repo.setSessionComment(sessionId, null)
+            } else {
+                val blockId = dialog.blockId ?: return@launch
+                repo.setExerciseComment(blockId, null)
+            }
+            commentDialog.value = null
+        }
+    }
+
+    fun cancelComment() {
+        commentDialog.value = null
     }
 }

@@ -33,6 +33,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.gymtracker.ui.components.BackHeader
+import com.gymtracker.ui.components.CommentDialog
+import com.gymtracker.ui.components.CommentRow
 import com.gymtracker.ui.components.DangerSmallButton
 import com.gymtracker.ui.components.ExerciseThumb
 import com.gymtracker.ui.components.OutlinedSmallButton
@@ -45,6 +47,10 @@ import com.gymtracker.ui.theme.LocalGymPalette
 
 /** testTag для автотестов: строка журнала; порядок строк — по дате (свежая сверху). */
 const val TAG_ROW = "journal_row"
+/** Комментарий тренировки под датой в строке журнала, строки комментариев в деталях. */
+const val TAG_ROW_COMMENT = "journal_comment"
+const val TAG_DETAIL_COMMENT = "detail_comment"
+const val TAG_DETAIL_BLOCK_COMMENT = "detail_block_comment"
 
 /**
  * B1 — Журнал; B2 — детали тренировки.
@@ -117,8 +123,18 @@ fun HistoryScreen(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
+                // Комментарий тренировки над блоками; тап по строке открывает диалог правки.
+                CommentRow(
+                    text = detail.comment,
+                    onClick = { vm.openComment(null) },
+                    testTag = TAG_DETAIL_COMMENT,
+                )
                 detail.blocks.forEach { block ->
-                    HistoryBlockCard(block = block, onOpenExercise = onOpenExercise)
+                    HistoryBlockCard(
+                        block = block,
+                        onOpenExercise = onOpenExercise,
+                        onEditComment = { vm.openComment(block.blockId) },
+                    )
                 }
                 DangerSmallButton("Удалить тренировку", onClick = { vm.requestDelete() })
                 Spacer(Modifier.height(16.dp))
@@ -132,6 +148,24 @@ fun HistoryScreen(
                 secondaryText = "Отмена",
                 onPrimary = { vm.confirmDelete(); onDeleted() },
                 onSecondary = { vm.cancelDelete() },
+            )
+        }
+        // Диалог комментария: тренировка или блок упражнения — правка из деталей записи.
+        val comment = state.commentDialog
+        if (comment != null) {
+            val saved = if (comment.isSession) {
+                detail.comment
+            } else {
+                detail.blocks.firstOrNull { it.blockId == comment.blockId }?.comment
+            }
+            CommentDialog(
+                title = if (comment.isSession) "Комментарий тренировки" else "Комментарий упражнения",
+                value = comment.text,
+                onValueChange = { vm.setCommentText(it) },
+                onSave = { vm.saveComment() },
+                onClear = { vm.clearComment() },
+                onCancel = { vm.cancelComment() },
+                canDelete = saved != null,
             )
         }
     }
@@ -171,6 +205,20 @@ private fun HistoryRowCard(row: HistoryRowUi, onClick: () -> Unit) {
             .padding(12.dp),
     ) {
         Text(row.dateLabel, fontSize = 17.sp, color = palette.text)
+        // Комментарий тренировки под датой: обрывается многоточием, полный текст —
+        // в деталях и диалоге; пустого комментария в строке нет.
+        if (row.comment != null) {
+            Text(
+                row.comment,
+                fontSize = 13.sp,
+                color = palette.text,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .testTag(TAG_ROW_COMMENT)
+                    .padding(top = 4.dp),
+            )
+        }
         // Основные мышцы тренировки — по ним видно, чем тренировались.
         if (row.musclesLabel.isNotEmpty()) {
             Text(
@@ -197,7 +245,11 @@ private fun HistoryRowCard(row: HistoryRowUi, onClick: () -> Unit) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun HistoryBlockCard(block: HistoryBlockUi, onOpenExercise: (Long) -> Unit) {
+private fun HistoryBlockCard(
+    block: HistoryBlockUi,
+    onOpenExercise: (Long) -> Unit,
+    onEditComment: () -> Unit,
+) {
     val palette = LocalGymPalette.current
     Column(
         Modifier
@@ -236,5 +288,12 @@ private fun HistoryBlockCard(block: HistoryBlockUi, onOpenExercise: (Long) -> Un
                 SetChip(label)
             }
         }
+        // Комментарий упражнения под чипами; тап по строке открывает диалог правки.
+        CommentRow(
+            text = block.comment,
+            onClick = onEditComment,
+            testTag = TAG_DETAIL_BLOCK_COMMENT,
+            modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+        )
     }
 }

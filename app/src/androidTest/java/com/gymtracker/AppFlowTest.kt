@@ -22,6 +22,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import com.gymtracker.ui.TAG_TAB
+import com.gymtracker.ui.components.TAG_COMMENT_COUNTER
+import com.gymtracker.ui.components.TAG_COMMENT_FIELD
 import com.gymtracker.ui.exercise.TAG_BODYWEIGHT_TOGGLE
 import com.gymtracker.ui.exercise.TAG_CARD_HISTORY_ROW
 import com.gymtracker.ui.exercise.TAG_DELETE
@@ -31,12 +33,16 @@ import com.gymtracker.ui.exercise.TAG_FORM_NAME
 import com.gymtracker.ui.exercise.TAG_ADD_PRIMARY
 import com.gymtracker.ui.exercise.TAG_ADD_SECONDARY
 import com.gymtracker.ui.exercise.TAG_SAVE
+import com.gymtracker.ui.history.TAG_DETAIL_BLOCK_COMMENT
+import com.gymtracker.ui.history.TAG_DETAIL_COMMENT
+import com.gymtracker.ui.history.TAG_ROW_COMMENT
 import com.gymtracker.ui.history.TAG_ROW
 import com.gymtracker.ui.muscles.TAG_ADD_EXERCISE
 import com.gymtracker.ui.muscles.TAG_EYE
 import com.gymtracker.ui.muscles.TAG_HIDDEN_HEADER
 import com.gymtracker.ui.muscles.TAG_MUSCLE
 import com.gymtracker.ui.muscles.TAG_MUSCLE_ROW
+import com.gymtracker.ui.workout.TAG_BLOCK_COMMENT
 import com.gymtracker.ui.workout.TAG_BLOCK_ROW
 import com.gymtracker.ui.workout.TAG_CHEVRON
 import com.gymtracker.ui.workout.TAG_EDIT_REPS
@@ -48,6 +54,7 @@ import com.gymtracker.ui.workout.TAG_REPS
 import com.gymtracker.ui.workout.TAG_SEARCH
 import com.gymtracker.ui.workout.TAG_TOTAL
 import com.gymtracker.ui.workout.TAG_WEIGHT
+import com.gymtracker.ui.workout.TAG_WORKOUT_COMMENT
 import com.gymtracker.util.formatDateFull
 import com.gymtracker.util.formatDateShort
 import org.junit.FixMethodOrder
@@ -786,6 +793,109 @@ class AppFlowTest {
         device.pressBack()
     }
 
+    /** t23. Комментарий тренировки над блоками, комментарий упражнения под чипами. */
+    @Test
+    fun t23_workoutAndExerciseComments() {
+        tapText("Начать тренировку")
+        tapText("Добавить упражнение")
+        pickExercise("Жим штанги лёжа")
+        typeInto(TAG_WEIGHT, "40")
+        tapText("Добавить подход")
+        displayed("10 × 40 кг")
+
+        // Строка комментария тренировки — над блоками: пустый комментарий показан
+        // подсказом, текста комментария строка не показывает.
+        tagHas(TAG_WORKOUT_COMMENT, "Добавить комментарий")
+        tapTag(TAG_WORKOUT_COMMENT)
+        displayed("Комментарий тренировки")
+        fieldHas(TAG_COMMENT_FIELD, "")
+        typeInto(TAG_COMMENT_FIELD, "Было сложно")
+        fieldHas(TAG_COMMENT_FIELD, "Было сложно")
+        tapText("Сохранить")
+        displayed("Было сложно")
+
+        // Комментарий упражнения — под чипами раскрытого блока.
+        tapTag(TAG_BLOCK_COMMENT)
+        displayed("Комментарий упражнения")
+        typeInto(TAG_COMMENT_FIELD, "Левая рука отставала")
+        tapText("Сохранить")
+        displayed("Левая рука отставала")
+
+        // Шеврон сворачивает блок: комментарий упражнения скрыт, комментарий
+        // тренировки над блоками остаётся.
+        tapTag(TAG_CHEVRON)
+        tagGone(TAG_BLOCK_COMMENT)
+        displayed("Было сложно")
+
+        // Раскрыть блок шевроном, завершить упражнение — свёрнутый завершённый
+        // блок комментария не показывает; нижние кнопки появляются (A3a).
+        tapTag(TAG_CHEVRON)
+        displayed("Левая рука отставала")
+        tapText("Завершить упражнение")
+        tagGone(TAG_BLOCK_COMMENT)
+
+        tapText("Завершить тренировку")
+        displayed("Завершить тренировку?")
+        tapText("Завершить")
+        counterValue(TAG_TOTAL, "5")
+
+        // B2: комментарий тренировки над блоками, комментарий упражнения под чипами.
+        tapTab("Журнал")
+        compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
+        displayed("← Журнал")
+        displayed("Было сложно")
+        displayed("Левая рука отставала")
+
+        // B1: комментарий тренировки в строке журнала под датой.
+        tapText("← Журнал")
+        tagHas(TAG_ROW_COMMENT, "Было сложно")
+
+        device.pressBack()
+        displayed("Начать тренировку")
+    }
+
+    /** u24. Лимит 250 знаков, правка комментария из деталей журнала, «Удалить» очищает. */
+    @Test
+    fun u24_commentLimitHistoryEditAndClear() {
+        tapTab("Журнал")
+        compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
+        displayed("← Журнал")
+
+        // Диалог комментария упражнения подставляет сохранённый текст: первый блок,
+        // у блоков без комментария строка показывает подсказ под тем же тегом.
+        tapTagIndex(TAG_DETAIL_BLOCK_COMMENT, 0)
+        fieldHas(TAG_COMMENT_FIELD, "Левая рука отставала")
+        tapText("Отмена")
+
+        // Ввод 250 знаков: поле принимает, счётчик показывает «250 / 250».
+        // 251-й знак отклоняется: поле остаётся 250 знаков.
+        tapTag(TAG_DETAIL_COMMENT)
+        typeInto(TAG_COMMENT_FIELD, longText(250))
+        fieldHas(TAG_COMMENT_FIELD, longText(250))
+        tagHas(TAG_COMMENT_COUNTER, "250 / 250")
+        compose.onNodeWithTag(TAG_COMMENT_FIELD).performTextInput("!")
+        fieldHas(TAG_COMMENT_FIELD, longText(250))
+        tagHas(TAG_COMMENT_COUNTER, "250 / 250")
+        tapText("Сохранить")
+
+        // Строка журнала показывает длинный комментарий (обрывается многоточием).
+        tapText("← Журнал")
+        tagHas(TAG_ROW_COMMENT, longText(250))
+
+        // «Удалить» очищает комментарий: строка деталей снова с подсказом,
+        // строка комментария в журнале исчезает.
+        compose.onAllNodesWithTag(TAG_ROW).get(0).performClick()
+        tapTag(TAG_DETAIL_COMMENT)
+        fieldHas(TAG_COMMENT_FIELD, longText(250))
+        tapText("Удалить")
+        tagHas(TAG_DETAIL_COMMENT, "Добавить комментарий")
+        tapText("← Журнал")
+        tagGone(TAG_ROW_COMMENT)
+
+        device.pressBack()
+        displayed("Начать тренировку")
+    }
+
     /** Есть ли элемент в дереве (не обязательно виден). */
     private fun exists(text: String): Boolean =
         compose.onAllNodes(hasText(text)).fetchSemanticsNodes().isNotEmpty()
@@ -809,6 +919,37 @@ class AppFlowTest {
             compose.onAllNodesWithTag(tag).fetchSemanticsNodes().size > index
         }
         compose.onAllNodesWithTag(tag).get(index).performClick()
+    }
+
+    /** Строка длиной n знаков для проверки лимита комментария. */
+    private fun longText(n: Int): String = "0123456789".repeat(30).substring(0, n)
+
+    /**
+     * Строка с тегом показывает текст (ждёт: состояние приходит из Room). Дерево
+     * берётся неразбитым: строка комментария в журнале лежит внутри кликабельной
+     * карточки и в слитом дереве сливается с ней.
+     */
+    private fun tagHas(tag: String, text: String) {
+        compose.waitUntil(30_000) {
+            try {
+                compose.onNodeWithTag(tag, useUnmergedTree = true).assert(hasText(text))
+                true
+            } catch (_: Throwable) {
+                false
+            }
+        }
+    }
+
+    /** Строка с тегом исчезла из дерева (блок свёрнут, комментария нет). */
+    private fun tagGone(tag: String) {
+        compose.waitUntil(30_000) {
+            try {
+                compose.onAllNodesWithTag(tag, useUnmergedTree = true).assertCountEquals(0)
+                true
+            } catch (_: Throwable) {
+                false
+            }
+        }
     }
 
     /** Значение счётчика: проверка внутри строки с тегом, а не по всей экрану. */
