@@ -75,7 +75,6 @@ const val TAG_BLOCK_ROW = "block_row"
 fun WorkoutScreen(
     vm: WorkoutsViewModel,
     onOpenPicker: () -> Unit,
-    onOpenExercise: (Long) -> Unit,
     /** Счётчики A1 — переходы в Журнал: детали последней тренировки и фильтр периода. */
     onOpenLastWorkout: (Long) -> Unit = { },
     onOpenHistory: (PeriodFilter) -> Unit = { },
@@ -137,13 +136,13 @@ fun WorkoutScreen(
                 PrimaryButton("Добавить упражнение", onClick = onOpenPicker)
                 OutlinedButton("Завершить тренировку", onClick = { vm.completeWorkout() })
             } else {
-                // A3/A3a. Блоки в порядке добавления; активный раскрыт, завершённые свёрнуты.
+                // A3/A3a. Блоки в порядке добавления; каждое раскрытие задаёт шеврон,
+                // активный блок по умолчанию раскрыт.
                 session.blocks.forEach { block ->
                     ExerciseBlockCard(
                         block = block,
                         session = session,
                         vm = vm,
-                        onOpenExercise = onOpenExercise,
                     )
                 }
                 if (session.activeBlockId == null) {
@@ -182,16 +181,20 @@ fun WorkoutScreen(
     }
 }
 
+/**
+ * Карточка блока тренировки: свёрнутый — одна строка (миниатюра, название, шеврон),
+ * у активного блока строка с акцентной рамкой. Раскрытый блок показывает подходы,
+ * у активного ещё поля «Повторы»/«Вес» и кнопки.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ExerciseBlockCard(
     block: BlockUi,
     session: SessionUi,
     vm: WorkoutsViewModel,
-    onOpenExercise: (Long) -> Unit,
 ) {
     val palette = LocalGymPalette.current
-    val expanded = block.isActive || block.isExpanded
+    val expanded = block.isExpanded
     val chevronRotation by animateFloatAsState(
         targetValue = if (expanded) 90f else 0f,
         label = "chevron",
@@ -213,10 +216,9 @@ private fun ExerciseBlockCard(
                 .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp)
                 .testTag(TAG_BLOCK_ROW)
                 .clickable {
-                    // Активный блок: строка ведёт в карточку упражнения.
-                    // Завершённый: строка переключает раскрытие, как шеврон.
-                    if (block.isActive) onOpenExercise(block.exerciseId)
-                    else vm.toggleExpand(block.blockId)
+                    // Строка блока переключает раскрытие — одинаково для
+                    // активного и завершённого блока; подход тап по строке не добавляет.
+                    vm.toggleExpand(block.blockId)
                 },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -238,10 +240,7 @@ private fun ExerciseBlockCard(
                 modifier = Modifier
                     .testTag(TAG_CHEVRON)
                     .graphicsLayer(rotationZ = chevronRotation)
-                    .then(
-                        if (block.isActive) Modifier
-                        else Modifier.clickable { vm.toggleExpand(block.blockId) }
-                    ),
+                    .clickable { vm.toggleExpand(block.blockId) },
             )
         }
 
@@ -263,7 +262,7 @@ private fun ExerciseBlockCard(
                     }
                 }
             }
-            if (block.showResume && !block.isActive) {
+            if (block.showResume) {
                 Box(
                     Modifier
                         .fillMaxWidth()
@@ -274,7 +273,9 @@ private fun ExerciseBlockCard(
             }
         }
 
-        if (block.isActive) {
+        if (block.isActive && expanded) {
+            // Раскрытый активный блок: поля ввода и кнопки. В свёрнутом они скрыты,
+            // введенные значения при этом остаются в состоянии.
             Column(
                 Modifier
                     .fillMaxWidth()
