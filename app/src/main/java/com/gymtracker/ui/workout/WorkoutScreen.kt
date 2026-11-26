@@ -1,5 +1,6 @@
 package com.gymtracker.ui.workout
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -65,6 +67,8 @@ const val TAG_REPS = "reps_input"
 const val TAG_WEIGHT = "weight_input"
 const val TAG_EDIT_WEIGHT = "edit_weight"
 const val TAG_EDIT_REPS = "edit_reps"
+const val TAG_CHEVRON = "block_chevron"
+const val TAG_BLOCK_ROW = "block_row"
 
 /** Экран «Тренировка»: A1 — нет активной сессии; A2/A3/A3a — сессия. */
 @Composable
@@ -187,6 +191,12 @@ private fun ExerciseBlockCard(
     onOpenExercise: (Long) -> Unit,
 ) {
     val palette = LocalGymPalette.current
+    val expanded = block.isActive || block.isExpanded
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (expanded) 90f else 0f,
+        label = "chevron",
+    )
+
     Column(
         Modifier
             .fillMaxWidth()
@@ -201,7 +211,13 @@ private fun ExerciseBlockCard(
             Modifier
                 .fillMaxWidth()
                 .padding(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 10.dp)
-                .clickable { onOpenExercise(block.exerciseId) },
+                .testTag(TAG_BLOCK_ROW)
+                .clickable {
+                    // Активный блок: строка ведёт в карточку упражнения.
+                    // Завершённый: строка переключает раскрытие, как шеврон.
+                    if (block.isActive) onOpenExercise(block.exerciseId)
+                    else vm.toggleExpand(block.blockId)
+                },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
@@ -215,25 +231,45 @@ private fun ExerciseBlockCard(
                 color = palette.text,
                 modifier = Modifier.weight(1f),
             )
-            if (block.showResume) {
-                RoundIconButton("↻", onClick = { vm.resumeBlock(block.blockId) })
-            }
+            Text(
+                "›",
+                fontSize = 17.sp,
+                color = palette.muted,
+                modifier = Modifier
+                    .testTag(TAG_CHEVRON)
+                    .graphicsLayer(rotationZ = chevronRotation)
+                    .then(
+                        if (block.isActive) Modifier
+                        else Modifier.clickable { vm.toggleExpand(block.blockId) }
+                    ),
+            )
         }
 
-        if (block.sets.isNotEmpty()) {
-            FlowRow(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                block.sets.forEach { set ->
-                    val chipLabel = formatSet(set.weightKg, set.reps, block.isBodyweight)
-                    SetChip(
-                        chipLabel,
-                        onClick = { vm.openEditSet(block.blockId, set.id, set.weightKg, set.reps, block.isBodyweight) },
-                    )
+        if (expanded) {
+            if (block.sets.isNotEmpty()) {
+                FlowRow(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    block.sets.forEach { set ->
+                        val chipLabel = formatSet(set.weightKg, set.reps, block.isBodyweight)
+                        SetChip(
+                            chipLabel,
+                            onClick = { vm.openEditSet(block.blockId, set.id, set.weightKg, set.reps, block.isBodyweight) },
+                        )
+                    }
+                }
+            }
+            if (block.showResume && !block.isActive) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+                ) {
+                    RoundIconButton("↻", onClick = { vm.resumeBlock(block.blockId) })
                 }
             }
         }

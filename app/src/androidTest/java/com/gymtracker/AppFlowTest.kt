@@ -37,6 +37,10 @@ import com.gymtracker.ui.muscles.TAG_EYE
 import com.gymtracker.ui.muscles.TAG_HIDDEN_HEADER
 import com.gymtracker.ui.muscles.TAG_MUSCLE
 import com.gymtracker.ui.muscles.TAG_MUSCLE_ROW
+import com.gymtracker.ui.workout.TAG_BLOCK_ROW
+import com.gymtracker.ui.workout.TAG_CHEVRON
+import com.gymtracker.ui.workout.TAG_EDIT_REPS
+import com.gymtracker.ui.workout.TAG_EDIT_WEIGHT
 import com.gymtracker.ui.workout.TAG_LAST
 import com.gymtracker.ui.workout.TAG_MONTH
 import com.gymtracker.ui.workout.TAG_PICK_ROW
@@ -44,8 +48,6 @@ import com.gymtracker.ui.workout.TAG_REPS
 import com.gymtracker.ui.workout.TAG_SEARCH
 import com.gymtracker.ui.workout.TAG_TOTAL
 import com.gymtracker.ui.workout.TAG_WEIGHT
-import com.gymtracker.ui.workout.TAG_EDIT_WEIGHT
-import com.gymtracker.ui.workout.TAG_EDIT_REPS
 import com.gymtracker.util.formatDateFull
 import com.gymtracker.util.formatDateShort
 import org.junit.FixMethodOrder
@@ -127,9 +129,15 @@ class AppFlowTest {
         fieldHas(TAG_WEIGHT, "40")
 
         tapText("Завершить упражнение")
-        // Блок свёрнут: поля ввода исчезли, чип остался.
+        // Блок свёрнут в одну строку: поля ввода исчезли, чипы скрыты, виден шеврон.
         fieldGone(TAG_REPS)
+        compose.onNodeWithText("10 × 40 кг").assertDoesNotExist()
+        // Тап по шеврону раскрывает блок: bubble-подход появляется.
+        tapTag(TAG_CHEVRON)
         displayed("10 × 40 кг")
+        // Тап по строке сворачивает блок обратно: чипы исчезают.
+        tapTag(TAG_BLOCK_ROW)
+        compose.onNodeWithText("10 × 40 кг").assertDoesNotExist()
 
         tapText("Завершить тренировку")
         displayed("Завершить тренировку?")
@@ -517,8 +525,11 @@ class AppFlowTest {
         tapText("Добавить подход")
         displayed("5 × 90 кг")
 
-        // Завершить блок — чипы кликабельны в свёрнутом блоке.
+        // Завершить блок — он свёрнут в одну строку, чипы скрыты.
         tapText("Завершить упражнение")
+
+        // Раскрыть блок шевроном: чипы появляются, тап по чипу — диалог правки.
+        tapTag(TAG_CHEVRON)
 
         // Тап по первому чипу (5 × 80 кг) — диалог правки.
         tapText("5 × 80 кг")
