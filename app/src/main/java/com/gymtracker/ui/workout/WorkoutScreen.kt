@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.gymtracker.ui.components.ConfirmDialog
+import com.gymtracker.ui.components.CommentDialog
+import com.gymtracker.ui.components.CommentRow
 import com.gymtracker.ui.components.DangerSmallButton
 import com.gymtracker.ui.components.ExerciseThumb
 import com.gymtracker.ui.components.OutlinedButton
@@ -69,6 +71,9 @@ const val TAG_EDIT_WEIGHT = "edit_weight"
 const val TAG_EDIT_REPS = "edit_reps"
 const val TAG_CHEVRON = "block_chevron"
 const val TAG_BLOCK_ROW = "block_row"
+/** Строка комментария тренировки (над блоками) и строка комментария блока упражнения. */
+const val TAG_WORKOUT_COMMENT = "workout_comment"
+const val TAG_BLOCK_COMMENT = "block_comment"
 
 /** Экран «Тренировка»: A1 — нет активной сессии; A2/A3/A3a — сессия. */
 @Composable
@@ -137,7 +142,12 @@ fun WorkoutScreen(
                 OutlinedButton("Завершить тренировку", onClick = { vm.completeWorkout() })
             } else {
                 // A3/A3a. Блоки в порядке добавления; каждое раскрытие задаёт шеврон,
-                // активный блок по умолчанию раскрыт.
+                // активный блок по умолчанию раскрыт. Комментарий тренировки — над блоками.
+                CommentRow(
+                    text = session.comment,
+                    onClick = { vm.openComment(null) },
+                    testTag = TAG_WORKOUT_COMMENT,
+                )
                 session.blocks.forEach { block ->
                     ExerciseBlockCard(
                         block = block,
@@ -178,6 +188,26 @@ fun WorkoutScreen(
     // Диалог правки подхода.
     if (state.editSetId != null) {
         EditSetDialog(vm, state)
+    }
+    // Диалог комментария: тренировка или блок упражнения.
+    val comment = state.commentDialog
+    if (comment != null) {
+        // Строка читает наблюдаемое состояние экрана, как диалог правки подхода.
+        val sessionState = state.session
+        val saved = if (comment.isSession) {
+            sessionState?.comment
+        } else {
+            sessionState?.blocks?.firstOrNull { it.blockId == comment.blockId }?.comment
+        }
+        CommentDialog(
+            title = if (comment.isSession) "Комментарий тренировки" else "Комментарий упражнения",
+            value = comment.text,
+            onValueChange = { vm.setCommentText(it) },
+            onSave = { vm.saveComment() },
+            onClear = { vm.clearComment() },
+            onCancel = { vm.cancelComment() },
+            canDelete = saved != null,
+        )
     }
 }
 
@@ -262,6 +292,14 @@ private fun ExerciseBlockCard(
                     }
                 }
             }
+            // Комментарий упражнения — под чипами; в свёрнутом блока его нет,
+            // тап по строке открывает диалог правки.
+            CommentRow(
+                text = block.comment,
+                onClick = { vm.openComment(block.blockId) },
+                testTag = TAG_BLOCK_COMMENT,
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, bottom = 10.dp),
+            )
             if (block.showResume) {
                 Box(
                     Modifier

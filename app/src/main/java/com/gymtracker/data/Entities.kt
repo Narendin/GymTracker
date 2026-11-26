@@ -103,6 +103,8 @@ data class WorkoutExercise(
     val exerciseId: Long,
     val orderInSession: Int,
     val status: BlockStatus,
+    /** Ощущения и планы по этому упражнению; лимит 250 знаков, пусто — нет комментария. */
+    val comment: String? = null,
 )
 
 @Entity(

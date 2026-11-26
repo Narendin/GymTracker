@@ -20,6 +20,9 @@ interface SessionDao {
     @Query("UPDATE workout_session SET finishedAtMillis = :ts WHERE id = :id")
     suspend fun finishSession(id: Long, ts: Long)
 
+    @Query("UPDATE workout_session SET comment = :comment WHERE id = :id")
+    suspend fun setSessionComment(id: Long, comment: String?)
+
     @Query("DELETE FROM workout_session WHERE id = :id")
     suspend fun deleteSessionById(id: Long)
 
@@ -49,6 +52,9 @@ interface SessionDao {
 
     @Query("UPDATE workout_exercise SET status = :status WHERE id = :id")
     suspend fun setBlockStatus(id: Long, status: BlockStatus)
+
+    @Query("UPDATE workout_exercise SET comment = :comment WHERE id = :id")
+    suspend fun setExerciseComment(id: Long, comment: String?)
 
     @Query("DELETE FROM workout_exercise WHERE id = :id")
     suspend fun deleteBlock(id: Long)

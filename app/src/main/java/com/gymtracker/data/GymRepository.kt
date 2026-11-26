@@ -78,6 +78,14 @@ class GymRepository(
     suspend fun completeSession(sessionId: Long) =
         sessionDao.finishSession(sessionId, System.currentTimeMillis())
 
+    /** Комментарий тренировки; null — комментария нет. */
+    suspend fun setSessionComment(sessionId: Long, comment: String?) =
+        sessionDao.setSessionComment(sessionId, comment)
+
+    /** Комментарий упражнения блока; null — комментария нет. */
+    suspend fun setExerciseComment(blockId: Long, comment: String?) =
+        sessionDao.setExerciseComment(blockId, comment)
+
     suspend fun deleteSession(sessionId: Long) = sessionDao.deleteSessionById(sessionId)
 
     suspend fun activeSessionOnce(): WorkoutSession? = sessionDao.activeSessionOnce()

@@ -20,7 +20,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ChangeGroup::class,
         ChangePhoto::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 @TypeConverters(GymConverters::class)
@@ -46,6 +46,13 @@ abstract class GymDatabase : RoomDatabase() {
             }
         }
 
+        /** v4: комментарий упражнения; старые блоки остаются без комментария. */
+        private val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE workout_exercise ADD COLUMN comment TEXT")
+            }
+        }
+
         fun get(context: Context): GymDatabase =
             Room.databaseBuilder(context.applicationContext, GymDatabase::class.java, DB_NAME)
                 .addCallback(object : RoomDatabase.Callback() {
@@ -53,7 +60,7 @@ abstract class GymDatabase : RoomDatabase() {
                         Seed.statements().forEach { db.execSQL(it) }
                     }
                 })
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
     }
 }
