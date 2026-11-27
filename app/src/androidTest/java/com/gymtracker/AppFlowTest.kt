@@ -44,9 +44,13 @@ import com.gymtracker.ui.muscles.TAG_MUSCLE
 import com.gymtracker.ui.muscles.TAG_MUSCLE_ROW
 import com.gymtracker.ui.workout.TAG_BLOCK_COMMENT
 import com.gymtracker.ui.workout.TAG_BLOCK_ROW
-import com.gymtracker.ui.workout.TAG_CHEVRON
 import com.gymtracker.ui.workout.TAG_EDIT_REPS
 import com.gymtracker.ui.workout.TAG_EDIT_WEIGHT
+import com.gymtracker.ui.workout.TAG_INFO
+import com.gymtracker.ui.workout.TAG_INFO_CHIP
+import com.gymtracker.ui.workout.TAG_INFO_COMMENT
+import com.gymtracker.ui.workout.TAG_INFO_SESSION
+import com.gymtracker.ui.workout.TAG_INFO_SHEET
 import com.gymtracker.ui.workout.TAG_LAST
 import com.gymtracker.ui.workout.TAG_MONTH
 import com.gymtracker.ui.workout.TAG_PICK_ROW
@@ -136,11 +140,11 @@ class AppFlowTest {
         fieldHas(TAG_WEIGHT, "40")
 
         tapText("Завершить упражнение")
-        // Блок свёрнут в одну строку: поля ввода исчезли, чипы скрыты, виден шеврон.
+        // Блок свёрнут в одну строку: поля ввода исчезли, чипы скрыты.
         fieldGone(TAG_REPS)
         compose.onNodeWithText("10 × 40 кг").assertDoesNotExist()
-        // Тап по шеврону раскрывает блок: bubble-подход появляется.
-        tapTag(TAG_CHEVRON)
+        // Тап по строке раскрывает блок: bubble-подход появляется.
+        tapTag(TAG_BLOCK_ROW)
         displayed("10 × 40 кг")
         // Тап по строке сворачивает блок обратно: чипы исчезают.
         tapTag(TAG_BLOCK_ROW)
@@ -535,8 +539,8 @@ class AppFlowTest {
         // Завершить блок — он свёрнут в одну строку, чипы скрыты.
         tapText("Завершить упражнение")
 
-        // Раскрыть блок шевроном: чипы появляются, тап по чипу — диалог правки.
-        tapTag(TAG_CHEVRON)
+        // Раскрыть блок тапом по строке: чипы появляются, тап по чипу — диалог правки.
+        tapTag(TAG_BLOCK_ROW)
 
         // Тап по первому чипу (5 × 80 кг) — диалог правки.
         tapText("5 × 80 кг")
@@ -695,7 +699,7 @@ class AppFlowTest {
         displayed("Начать тренировку")
     }
 
-    /** s22. Активный блок сворачивается в одну строку и раскрывается шевроном. */
+    /** s22. Активный блок сворачивается в одну строку и раскрывается тапом по строке. */
     @Test
     fun s22_activeBlockCollapseAndExpand() {
         tapText("Начать тренировку")
@@ -711,8 +715,8 @@ class AppFlowTest {
         // Добавление подхода раскрытие не меняет — блок остаётся открытым.
         compose.onNodeWithTag(TAG_REPS).assertIsDisplayed()
 
-        // Шеврон сворачивает активный блок: поля и кнопки исчезают, чипы скрыты.
-        tapTag(TAG_CHEVRON)
+        // Тап по строке сворачивает активный блок: поля и кнопки исчезают, чипы скрыты.
+        tapTag(TAG_BLOCK_ROW)
         fieldGone(TAG_REPS)
         fieldGone(TAG_WEIGHT)
         compose.onNodeWithText("10 × 25 кг").assertDoesNotExist()
@@ -722,7 +726,7 @@ class AppFlowTest {
         compose.onNodeWithText("Завершить тренировку").assertDoesNotExist()
         compose.onNodeWithText("↻").assertDoesNotExist()
 
-        // Тап по строке активного блока раскрывает его, как шеврон, и подход
+        // Тап по строке активного блока раскрывает его, подход
         // не добавляет; тап по строке раскрытого блока сворачивает обратно.
         tapTag(TAG_BLOCK_ROW)
         fieldHas(TAG_REPS, "10")
@@ -732,8 +736,8 @@ class AppFlowTest {
         fieldGone(TAG_REPS)
         compose.onNodeWithText("Добавить подход").assertDoesNotExist()
 
-        // Шеврон раскрывает блок: значения полей не сбросились.
-        tapTag(TAG_CHEVRON)
+        // Тап по строке раскрывает блок: значения полей не сбросились.
+        tapTag(TAG_BLOCK_ROW)
         fieldHas(TAG_REPS, "10")
         fieldHas(TAG_WEIGHT, "25")
         displayed("10 × 25 кг")
@@ -749,20 +753,21 @@ class AppFlowTest {
         compose.waitForIdle()
         compose.onNodeWithTag(TAG_REPS).assertIsDisplayed()
         displayed("12 × 25 кг")
-        compose.onNodeWithText("↻").assertDoesNotExist()
-        compose.onNodeWithText("Добавить упражнение").assertDoesNotExist()
+        textGone("↻")
+        textGone("Добавить упражнение")
 
         tapText("Завершить упражнение")
-        // Завершённый блок свёрнут: чипы скрыты.
-        compose.onNodeWithText("12 × 25 кг").assertDoesNotExist()
+        // Завершённый блок свёрнут: чипы скрыты; состояние приходит асинхронно,
+        // поэтому ждем исчезновения, а не проверяем мгновенно.
+        textGone("12 × 25 кг")
 
         // Второе упражнение: активный блок раскрыт, свёрнутый завершённый
-        // раскрывают шевроном; «↻» не появляется, пока есть активное упражнение.
+        // раскрывают тапом по строке; «↻» не появляется, пока есть активное упражнение.
         tapText("Добавить упражнение")
         pickExercise("Приседания со штангой")
-        tapTagIndex(TAG_CHEVRON, 0)
+        tapTagIndex(TAG_BLOCK_ROW, 0)
         displayed("12 × 25 кг")
-        compose.onNodeWithText("↻").assertDoesNotExist()
+        textGone("↻")
 
         typeInto(TAG_WEIGHT, "70")
         tapText("Добавить подход")
@@ -772,11 +777,13 @@ class AppFlowTest {
         // A3a: активного упражнения нет — нижние кнопки доступны, «↻» появляется
         // на последнем завершённом блоке в раскрытом виде. Тап по «↻» делает блок
         // активным и раскрывает, поля подставлены из последнего подхода.
+        compose.waitForIdle()
         compose.onNodeWithText("Добавить упражнение").assertIsDisplayed()
-        tapTagIndex(TAG_CHEVRON, 1)
+        tapTagIndex(TAG_BLOCK_ROW, 1)
         displayed("↻")
         tapText("↻")
-        compose.onNodeWithText("Добавить упражнение").assertDoesNotExist()
+        // «↻» делает блок активным: нижние кнопки снова скрыты; ждем обновления состояния.
+        textGone("Добавить упражнение")
         fieldHas(TAG_REPS, "10")
         fieldHas(TAG_WEIGHT, "70")
         displayed("10 × 70 кг")
@@ -821,15 +828,15 @@ class AppFlowTest {
         tapText("Сохранить")
         displayed("Левая рука отставала")
 
-        // Шеврон сворачивает блок: комментарий упражнения скрыт, комментарий
+        // Тап по строке сворачивает блок: комментарий упражнения скрыт, комментарий
         // тренировки над блоками остаётся.
-        tapTag(TAG_CHEVRON)
+        tapTag(TAG_BLOCK_ROW)
         tagGone(TAG_BLOCK_COMMENT)
         displayed("Было сложно")
 
-        // Раскрыть блок шевроном, завершить упражнение — свёрнутый завершённый
+        // Раскрыть блок тапом по строке, завершить упражнение — свёрнутый завершённый
         // блок комментария не показывает; нижние кнопки появляются (A3a).
-        tapTag(TAG_CHEVRON)
+        tapTag(TAG_BLOCK_ROW)
         displayed("Левая рука отставала")
         tapText("Завершить упражнение")
         tagGone(TAG_BLOCK_COMMENT)
@@ -894,6 +901,98 @@ class AppFlowTest {
 
         device.pressBack()
         displayed("Начать тренировку")
+    }
+
+    /** v25. Иконка «i» в раскрытом активном блоке: лист истории упражнения. */
+    @Test
+    fun v25_infoIconOpensHistorySheet() {
+        tapText("Начать тренировку")
+        tapText("Добавить упражнение")
+        pickExercise("Жим штанги лёжа")
+        typeInto(TAG_REPS, "10")
+        typeInto(TAG_WEIGHT, "40")
+        tapText("Добавить подход")
+        displayed("10 × 40 кг")
+
+        // Иконка «i» в раскрытом активном блоке: тап открывает лист истории.
+        tapTag(TAG_INFO)
+        // Заголовок листа в слитом дереве сливается с содержимым — ищем подстроку.
+        displayedInLabel("История упражнения")
+        countTag(TAG_INFO_SHEET, 1)
+        // После q20 удалили все тренировки с этим упражнением; в листе —
+        // завершённая тренировка из t23 (текущая сессия в лист не попадает):
+        // дата, чип, комментарий упражнения. Строка листа не кликабельная, дата
+        // и чипы лежат дочерними текстами: в слитом дереве они подстроки листа.
+        countTag(TAG_INFO_SESSION, 1)
+        displayedInLabel(todayFull())
+        countTag(TAG_INFO_CHIP, 1)
+        displayedInLabel("10 × 40 кг")
+        tagHas(TAG_INFO_COMMENT, "Левая рука отставала")
+
+        // Свёрнутый активный блок: иконки «i» нет; тап по строке раскрывает — она появляется.
+        tapTag(TAG_BLOCK_ROW)
+        tagGone(TAG_INFO)
+        tapTag(TAG_BLOCK_ROW)
+        compose.waitUntil(30_000) { compose.onNodeWithTag(TAG_INFO).isDisplayed() }
+
+        // «Назад» закрывает лист, приложение остаётся на экране.
+        device.pressBack()
+        tagGone(TAG_INFO_SHEET)
+        displayed("Тренировка")
+        compose.waitUntil(30_000) { device.currentPackageName == appPackage }
+
+        tapText("Завершить упражнение")
+        tapText("Завершить тренировку")
+        tapText("Завершить")
+        counterValue(TAG_TOTAL, "6")
+    }
+
+    /** v26. Упражнение без истории: лист показывает пустое состояние. */
+    @Test
+    fun v26_infoSheetEmptyState() {
+        tapText("Начать тренировку")
+        tapText("Добавить упражнение")
+        pickExercise("Отжимания от пола")
+        typeInto(TAG_REPS, "10")
+        tapText("Добавить подход")
+        displayed("10 повт.")
+
+        tapTag(TAG_INFO)
+        // Заголовок листа в слитом дереве сливается с содержимым — ищем подстроку.
+        displayedInLabel("История упражнения")
+        displayedInLabel("Данных о прошлых тренировках нет")
+        countTag(TAG_INFO_SHEET, 1)
+        countTag(TAG_INFO_SESSION, 0)
+
+        device.pressBack()
+        tagGone(TAG_INFO_SHEET)
+
+        tapText("Завершить упражнение")
+        tapText("Завершить тренировку")
+        tapText("Завершить")
+        counterValue(TAG_TOTAL, "7")
+    }
+
+    /** w27. Дата строки листа — дата тренировки, не id сессии. */
+    @Test
+    fun w27_infoSheetDateIsTrainingDate() {
+        tapText("Начать тренировку")
+        tapText("Добавить упражнение")
+        pickExercise("Жим штанги лёжа")
+        typeInto(TAG_REPS, "10")
+        typeInto(TAG_WEIGHT, "40")
+        tapText("Добавить подход")
+        tapTag(TAG_INFO)
+        displayedInLabel("История упражнения")
+        // Строки листа: завершённые тренировки с этим упражнением (t23 и эта);
+        // дата каждой — дата тренировки, не id сессии (1970 — признак подмены).
+        countTag(TAG_INFO_SESSION, 2)
+        displayedInLabel(todayFull())
+        displayedInLabel("10 × 40 кг")
+        device.pressBack()
+        tapText("Завершить упражнение")
+        tapText("Завершить тренировку")
+        tapText("Завершить")
     }
 
     /** Есть ли элемент в дереве (не обязательно виден). */
@@ -986,6 +1085,11 @@ class AppFlowTest {
                 false
             }
         }
+    }
+
+    /** Текст исчез из дерева (свернутый блок, закрытый диалог): ждёт, а не проверяет мгновенно. */
+    private fun textGone(text: String) {
+        compose.waitUntil(30_000) { !exists(text) }
     }
 
     /**

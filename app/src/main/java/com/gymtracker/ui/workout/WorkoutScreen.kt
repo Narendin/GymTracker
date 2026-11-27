@@ -1,6 +1,5 @@
 package com.gymtracker.ui.workout
 
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -29,7 +30,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -55,6 +55,7 @@ import com.gymtracker.ui.components.StatRow
 import com.gymtracker.ui.history.PeriodFilter
 import com.gymtracker.ui.theme.LocalGymPalette
 import com.gymtracker.util.exercisesLabel
+import com.gymtracker.util.formatDateFull
 import com.gymtracker.util.formatSet
 import com.gymtracker.util.workoutsLabel
 
@@ -69,11 +70,16 @@ const val TAG_REPS = "reps_input"
 const val TAG_WEIGHT = "weight_input"
 const val TAG_EDIT_WEIGHT = "edit_weight"
 const val TAG_EDIT_REPS = "edit_reps"
-const val TAG_CHEVRON = "block_chevron"
 const val TAG_BLOCK_ROW = "block_row"
 /** Строка комментария тренировки (над блоками) и строка комментария блока упражнения. */
 const val TAG_WORKOUT_COMMENT = "workout_comment"
 const val TAG_BLOCK_COMMENT = "block_comment"
+/** Иконка «i» в раскрытом активном блоке и лист истории упражнения. */
+const val TAG_INFO = "exercise_info"
+const val TAG_INFO_SHEET = "exercise_info_sheet"
+const val TAG_INFO_SESSION = "info_session"
+const val TAG_INFO_CHIP = "info_chip"
+const val TAG_INFO_COMMENT = "info_comment"
 
 /** Экран «Тренировка»: A1 — нет активной сессии; A2/A3/A3a — сессия. */
 @Composable
@@ -141,8 +147,9 @@ fun WorkoutScreen(
                 PrimaryButton("Добавить упражнение", onClick = onOpenPicker)
                 OutlinedButton("Завершить тренировку", onClick = { vm.completeWorkout() })
             } else {
-                // A3/A3a. Блоки в порядке добавления; каждое раскрытие задаёт шеврон,
-                // активный блок по умолчанию раскрыт. Комментарий тренировки — над блоками.
+                // A3/A3a. Блоки в порядке добавления; раскрытие переключает тап по
+                // строке блока, активный блок по умолчанию раскрыт. Комментарий
+                // тренировки — над блоками.
                 CommentRow(
                     text = session.comment,
                     onClick = { vm.openComment(null) },
@@ -163,6 +170,15 @@ fun WorkoutScreen(
             }
             Spacer(Modifier.height(16.dp))
         }
+    }
+
+    // Лист истории упражнения, открытый иконкой «i» в раскрытом активном блоке.
+    val info = state.infoSheet
+    if (info != null) {
+        ExerciseInfoSheet(
+            info = info,
+            onDismiss = { vm.closeInfo() },
+        )
     }
 
     // A5: подтверждение завершения — только при наличии упражнений.
@@ -212,8 +228,9 @@ fun WorkoutScreen(
 }
 
 /**
- * Карточка блока тренировки: свёрнутый — одна строка (миниатюра, название, шеврон),
- * у активного блока строка с акцентной рамкой. Раскрытый блок показывает подходы,
+ * Карточка блока тренировки: свёрнутый — одна строка (миниатюра, название),
+ * у активного блока строка с акцентной рамкой; в раскрытом активном блоке
+ * на правом краю строки иконка «i». Раскрытый блок показывает подходы,
  * у активного ещё поля «Повторы»/«Вес» и кнопки.
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -225,10 +242,6 @@ private fun ExerciseBlockCard(
 ) {
     val palette = LocalGymPalette.current
     val expanded = block.isExpanded
-    val chevronRotation by animateFloatAsState(
-        targetValue = if (expanded) 90f else 0f,
-        label = "chevron",
-    )
 
     Column(
         Modifier
@@ -263,15 +276,28 @@ private fun ExerciseBlockCard(
                 color = palette.text,
                 modifier = Modifier.weight(1f),
             )
-            Text(
-                "›",
-                fontSize = 17.sp,
-                color = palette.muted,
-                modifier = Modifier
-                    .testTag(TAG_CHEVRON)
-                    .graphicsLayer(rotationZ = chevronRotation)
-                    .clickable { vm.toggleExpand(block.blockId) },
-            )
+            // Иконка «i» — только в раскрытом активном блоке: тап открывает лист
+            // прошлых тренировок этого упражнения. Оранжевый контур и оранжевая «i»,
+            // правый край строки; в свёрнутом строке её нет.
+            if (block.isActive && expanded) {
+                Spacer(Modifier.weight(1f))
+                Box(
+                    Modifier
+                        .testTag(TAG_INFO)
+                        .size(32.dp)
+                        .clip(CircleShape)
+                        .border(1.dp, palette.info, CircleShape)
+                        .clickable { vm.openInfo(block.blockId) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "i",
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.info,
+                    )
+                }
+            }
         }
 
         if (expanded) {
@@ -426,6 +452,91 @@ private fun EditSetDialog(vm: WorkoutsViewModel, state: WorkoutUiState) {
             DangerSmallButton("Удалить", onClick = { vm.deleteSet() })
             Spacer(Modifier.height(8.dp))
             OutlinedSmallButton("Отмена", onClick = { vm.cancelEditSet() })
+        }
+    }
+}
+
+/**
+ * A3l — нижний лист истории упражнения: последние 3 завершённые тренировки,
+ * содержавшие это упражнение (текущая сессия не показывается). Дата, bubble-подходы,
+ * комментарий упражнения под чипами; нет истории — текст пустого состояния.
+ */
+@OptIn(ExperimentalLayoutApi::class, androidx.compose.material3.ExperimentalMaterial3Api::class)
+@Composable
+private fun ExerciseInfoSheet(
+    info: InfoUi,
+    onDismiss: () -> Unit,
+) {
+    val palette = LocalGymPalette.current
+    androidx.compose.material3.ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        containerColor = palette.panel,
+    ) {
+        Column(
+            Modifier
+                .testTag(TAG_INFO_SHEET)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                "История упражнения",
+                fontSize = 17.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = palette.text,
+            )
+            if (info.sessions.isEmpty()) {
+                Text(
+                    "Данных о прошлых тренировках нет",
+                    fontSize = 14.sp,
+                    color = palette.muted,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+            info.sessions.forEach { row ->
+                Column(
+                    Modifier
+                        .testTag(TAG_INFO_SESSION)
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(palette.panel2)
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        formatDateFull(row.startMillis),
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = palette.text,
+                    )
+                    FlowRow(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        row.sets.forEach { set ->
+                            SetChip(
+                                formatSet(set.weightKg, set.reps, info.isBodyweight),
+                                modifier = Modifier.testTag(TAG_INFO_CHIP),
+                            )
+                        }
+                    }
+                    // Комментарий упражнения — под чипами; у тренировки без комментария строки нет.
+                    if (row.comment != null) {
+                        Text(
+                            row.comment,
+                            fontSize = 14.sp,
+                            lineHeight = 19.sp,
+                            color = palette.text,
+                            maxLines = 3,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier
+                                .testTag(TAG_INFO_COMMENT)
+                                .fillMaxWidth(),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

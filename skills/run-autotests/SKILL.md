@@ -9,7 +9,7 @@ description: "Running GymTracker instrumented UI autotests on a device/emulator:
 нарастанию имён, состояние накапливается от пустой базы. Число методов
 считают командой:
 `(Get-Content app\src\androidTest\java\com\gymtracker\AppFlowTest.kt -Encoding utf8 | Select-String -Pattern '^\s*@Test').Count`
-(сейчас 24), оно есть в строке прогресса. Команды сборки и
+(сейчас 27), оно есть в строке прогресса. Команды сборки и
 ловушки — `docs/BUILD.md`, раздел «Автотесты интерфейса».
 
 ## Железные правила

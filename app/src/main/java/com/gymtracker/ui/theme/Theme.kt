@@ -99,6 +99,8 @@ data class GymPalette(
     val danger: Color,
     val dangerBorder: Color,
     val text: Color,
+    /** Оранжевый для информационных действий; акцент остаётся основным. */
+    val info: Color,
 )
 
 val DarkPalette = GymPalette(
@@ -113,6 +115,7 @@ val DarkPalette = GymPalette(
     danger = GymDanger,
     dangerBorder = GymDangerBorder,
     text = GymText,
+    info = GymInfo,
 )
 
 val LightPalette = GymPalette(
@@ -127,6 +130,7 @@ val LightPalette = GymPalette(
     danger = GymDanger,
     dangerBorder = GymDangerBorder,
     text = LightText,
+    info = GymInfo,
 )
 
 val LocalGymPalette = compositionLocalOf { DarkPalette }
