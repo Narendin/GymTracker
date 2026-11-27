@@ -177,6 +177,10 @@ class GymRepository(
     fun exerciseHistorySets(exerciseId: Long): Flow<List<ExerciseHistorySet>> =
         sessionDao.exerciseHistorySets(exerciseId)
 
+    /** Последние 3 завершённые тренировки с этим упражнением — лист «i» активного блока. */
+    fun lastExerciseSessions(exerciseId: Long): Flow<List<ExerciseHistorySessionRow>> =
+        sessionDao.lastExerciseSessions(exerciseId)
+
     // ——— Изменения ———
     fun changeGroups(): Flow<List<ChangeGroupRow>> = changeDao.groups()
     fun photosForGroup(groupId: Long): Flow<List<ChangePhoto>> = changeDao.photosForGroup(groupId)

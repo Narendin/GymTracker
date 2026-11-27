@@ -40,7 +40,7 @@ import java.io.File
 
 /**
  * Строка счётчика A1: label + значение справа, акцент, высота 56.
- * С [onClick] — кнопка перехода: строка кликабельна, справа шеврон.
+ * С [onClick] — кнопка перехода: строка кликабельна, стрелки нет.
  */
 @Composable
 fun StatRow(
@@ -70,14 +70,6 @@ fun StatRow(
             fontWeight = FontWeight.SemiBold,
             color = palette.accent,
         )
-        if (clickable) {
-            Text(
-                "›",
-                fontSize = 17.sp,
-                color = palette.muted,
-                modifier = Modifier.padding(start = 8.dp),
-            )
-        }
     }
 }
 

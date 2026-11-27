@@ -4,7 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.gymtracker.data.BlockStatus
 import com.gymtracker.data.BlockWithExercise
+import com.gymtracker.data.ExerciseHistorySessionRow
 import com.gymtracker.data.GymRepository
+import com.gymtracker.data.SetEntry
 import com.gymtracker.data.WorkoutSession
 import com.gymtracker.ui.components.CommentUi
 import com.gymtracker.ui.components.COMMENT_LIMIT
@@ -12,12 +14,15 @@ import com.gymtracker.ui.components.commentLength
 import com.gymtracker.util.formatDateFull
 import com.gymtracker.util.formatDateShort
 import com.gymtracker.util.formatWeight
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -52,6 +57,21 @@ data class SessionUi(
     val comment: String?,
 )
 
+/** Строка листа «i»: дата завершённой тренировки, подходы упражнения, его комментарий. */
+data class InfoSessionUi(
+    val startMillis: Long,
+    val sets: List<SetEntry>,
+    val comment: String?,
+)
+
+/** Состояние листа истории упражнения в активном блоке. */
+data class InfoUi(
+    val blockId: Long,
+    val exerciseName: String,
+    val isBodyweight: Boolean,
+    val sessions: List<InfoSessionUi>,
+)
+
 /** Состояние диалога комментария вынесено в ui.components.CommentUi. */
 data class WorkoutUiState(
     val todayLabel: String,
@@ -71,6 +91,8 @@ data class WorkoutUiState(
     val editIsBodyweight: Boolean = false,
     /** Диалог комментария (тренировка или блок упражнения). */
     val commentDialog: CommentUi? = null,
+    /** Лист истории упражнения, открытый иконкой «i» в раскрытом активном блоке. */
+    val infoSheet: InfoUi? = null,
 )
 
 private data class Base(
@@ -80,8 +102,12 @@ private data class Base(
     val session: WorkoutSession?,
 )
 
-private data class Quint(
+private data class Sext(
     val blocks: List<BlockWithExercise>,
+    val blockId: Long,
+    val exerciseId: Long,
+    val exerciseName: String,
+    val isBodyweight: Boolean,
     val reps: String,
     val weight: String,
     val prefilled: Boolean,
@@ -105,7 +131,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     private val weightPrefilled = MutableStateFlow(true)
     private val finishConfirm = MutableStateFlow(false)
     private val noSetsBlockId = MutableStateFlow<Long?>(null)
-    // id блоков, чьё раскрытие переключил пользователь (шеврон): у активного блока
+    // id блоков, чьё раскрытие переключил пользователь (тап по строке): у активного блока
     // состояние обратное (по умолчанию раскрыт), у завершённого — прямое (по умолчанию свёрнут).
     // Живое, сбрасывается между сессиями.
     private val toggledBlocks = MutableStateFlow<Set<Long>>(emptySet())
@@ -118,6 +144,9 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
     // Состояние диалога комментария: поле живёт в состоянии экрана, как поля диалога
     // правки подхода, — набранный текст должен появляться в поле.
     private val commentDialog = MutableStateFlow<CommentUi?>(null)
+    // Активный блок, для которого открыт лист истории упражнения (иконка «i»);
+    // 0 — лист закрыт. Лист закрывается вместе с активным блоком (упражнение завершено).
+    private val infoBlockId = MutableStateFlow(0L)
 
     private val bound30 = Instant.now().minus(30, ChronoUnit.DAYS).toEpochMilli()
 
@@ -178,25 +207,40 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                     )
                 }
             } else {
-                combine(
+                val queries = combine(
                     combine(
-                        combine(
-                            repo.blocksForSession(session.id),
-                            repsInput,
-                            weightInput,
-                            weightPrefilled,
-                            finishConfirm,
-                        ) { blocks, reps, weight, prefilled, confirm ->
-                            Quint(blocks, reps, weight, prefilled, confirm, emptySet())
-                        },
-                        toggledBlocks,
-                    ) { q, toggled -> q.copy(toggled = toggled) },
+                        repo.blocksForSession(session.id),
+                        repsInput,
+                        weightInput,
+                        weightPrefilled,
+                        finishConfirm,
+                    ) { blocks, reps, weight, prefilled, confirm ->
+                        val active = blocks.firstOrNull { it.block.status == BlockStatus.ACTIVE }
+                        Sext(
+                            blocks = blocks,
+                            blockId = active?.block?.id ?: 0L,
+                            exerciseId = active?.block?.exerciseId ?: 0L,
+                            exerciseName = active?.exercise?.name ?: "",
+                            isBodyweight = active?.exercise?.isBodyweight ?: false,
+                            reps = reps,
+                            weight = weight,
+                            prefilled = prefilled,
+                            confirm = confirm,
+                            toggled = emptySet(),
+                        )
+                    },
+                    toggledBlocks,
+                ) { s, toggled -> s.copy(toggled = toggled) }
+                combine(
+                    queries,
                     noSetsBlockId,
                     combine(editBlockId, editSetId, editWeight, editReps, editIsBodyweight) { b, s, w, r, bw ->
                         EditState(b, s, w, r, bw)
                     },
-                    commentDialog,
-                ) { q, noSets, edit, comment ->
+                    combine(commentDialog, infoBlockId) { comment, infoId -> comment to infoId },
+                    infoRows(queries),
+                ) { q, noSets, edit, commentAndInfo, rows ->
+                    val (comment, infoId) = commentAndInfo
                     WorkoutUiState(
                         todayLabel = today,
                         lastWorkoutLabel = lastLabel,
@@ -211,6 +255,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
                         editReps = edit.reps,
                         editIsBodyweight = edit.isBodyweight,
                         commentDialog = comment,
+                        infoSheet = buildInfoUi(q, infoId, rows),
                     )
                 }
             }
@@ -220,6 +265,49 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
             SharingStarted.Eagerly,
             WorkoutUiState(todayLabel = formatDateFull(System.currentTimeMillis())),
         )
+
+    /**
+     * Лист истории упражнения: строки запроса группируются по тренировке
+     * (запрос уже отсортирован: свежая сверху, подходы по порядку), берутся
+     * первые 3 тренировки. Лист открыт, пока его блок — активный блок сессии.
+     */
+    private fun buildInfoUi(q: Sext, infoId: Long, rows: List<ExerciseHistorySessionRow>): InfoUi? {
+        if (infoId == 0L || infoId != q.blockId) return null
+        val sessions = rows.groupBy { it.sessionId }.values.take(3).map { list ->
+            InfoSessionUi(
+                startMillis = list.first().startMillis,
+                sets = list.sortedBy { it.orderInExercise }.map {
+                    SetEntry(
+                        workoutExerciseId = 0L,
+                        orderInExercise = it.orderInExercise,
+                        weightKg = it.weightKg,
+                        reps = it.reps,
+                    )
+                },
+                comment = list.firstNotNullOfOrNull { it.exerciseComment },
+            )
+        }
+        return InfoUi(
+            blockId = q.blockId,
+            exerciseName = q.exerciseName,
+            isBodyweight = q.isBodyweight,
+            sessions = sessions,
+        )
+    }
+
+    /**
+     * Строки истории активного упражнения: id упражнения берётся из состояния
+     * блоков, поток переподписывается на запрос при его смене, пока лист открыт
+     * (infoBlockId = 0 — лист закрыт).
+     */
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private fun infoRows(queries: Flow<Sext>): Flow<List<ExerciseHistorySessionRow>> =
+        combine(queries, infoBlockId) { q, infoId ->
+            if (infoId == 0L) 0L else q.exerciseId
+        }.distinctUntilChanged().flatMapLatest { exId ->
+            if (exId == 0L) flowOf(emptyList())
+            else repo.lastExerciseSessions(exId)
+        }
 
     private fun buildSessionUi(
         session: WorkoutSession,
@@ -267,10 +355,11 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
         viewModelScope.launch {
             repo.startSession()
             toggledBlocks.value = emptySet()
+            infoBlockId.value = 0L
         }
     }
 
-    /** Шеврон блока: раскрыть/свернуть. Работает и на активном блоке, поля при сворачивании сохраняются. */
+    /** Тап по строке блока: раскрыть/свернуть. Работает и на активном блоке, поля при сворачивании сохраняются. */
     fun toggleExpand(blockId: Long) {
         toggledBlocks.value =
             if (blockId in toggledBlocks.value) toggledBlocks.value - blockId
@@ -321,6 +410,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
             repo.deleteBlock(blockId)
             noSetsBlockId.value = null
             toggledBlocks.value = toggledBlocks.value - blockId
+            if (infoBlockId.value == blockId) infoBlockId.value = 0L
         }
     }
 
@@ -363,6 +453,7 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
             finishConfirm.value = false
             toggledBlocks.value = emptySet()
             commentDialog.value = null
+            infoBlockId.value = 0L
         }
     }
 
@@ -484,5 +575,20 @@ class WorkoutsViewModel(private val repo: GymRepository) : ViewModel() {
 
     fun cancelComment() {
         commentDialog.value = null
+    }
+
+    // ——— Лист истории упражнения (иконка «i») ———
+
+    /** Открыть лист истории: только для активного блока, иконка в раскрытом блоке. */
+    fun openInfo(blockId: Long) {
+        val session = uiState.value.session ?: return
+        if (session.activeBlockId == blockId) {
+            infoBlockId.value = blockId
+        }
+    }
+
+    /** Закрыть лист (свайп, тап вне листа, «Назад»). */
+    fun closeInfo() {
+        infoBlockId.value = 0L
     }
 }

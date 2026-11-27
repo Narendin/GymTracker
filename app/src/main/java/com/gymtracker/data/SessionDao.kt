@@ -146,6 +146,27 @@ interface SessionDao {
     )
     fun exerciseSessions(exerciseId: Long): Flow<List<ExerciseSessionRow>>
 
+    /**
+     * Последние 3 завершённые тренировки, содержавшие это упражнение: дата,
+     * подходы упражнения и комментарий — одним потоком, свежая сверху.
+     * Текущая (незавершённая) сессия в запрос не попадает.
+     */
+    @Query(
+        "SELECT ws.id AS sessionId, ws.startMillis AS startMillis, " +
+            "se.weightKg AS weightKg, se.reps AS reps, se.orderInExercise AS orderInExercise, " +
+            "we.comment AS exerciseComment " +
+            "FROM workout_exercise we " +
+            "JOIN set_entry se ON se.workoutExerciseId = we.id " +
+            "JOIN workout_session ws ON ws.id = we.sessionId " +
+            "WHERE we.exerciseId = :exerciseId AND ws.finishedAtMillis IS NOT NULL " +
+            "AND ws.id IN (SELECT DISTINCT ws2.id FROM workout_session ws2 " +
+            "JOIN workout_exercise we2 ON we2.sessionId = ws2.id " +
+            "WHERE we2.exerciseId = :exerciseId AND ws2.finishedAtMillis IS NOT NULL " +
+            "ORDER BY ws2.startMillis DESC LIMIT 3) " +
+            "ORDER BY ws.startMillis DESC, se.orderInExercise"
+    )
+    fun lastExerciseSessions(exerciseId: Long): Flow<List<ExerciseHistorySessionRow>>
+
     /** Подходы упражнения по сессиям — bubble-лента в истории карточки. */
     @Query(
         "SELECT ws.id AS sessionId, ws.startMillis AS startMillis, se.weightKg AS weightKg, " +
@@ -164,6 +185,16 @@ data class ExerciseHistorySet(
     val weightKg: Double,
     val reps: Int,
     val orderInExercise: Int,
+)
+
+/** Подход упражнения в завершённой тренировке + комментарий упражнения блока. */
+data class ExerciseHistorySessionRow(
+    val sessionId: Long,
+    val startMillis: Long,
+    val weightKg: Double,
+    val reps: Int,
+    val orderInExercise: Int,
+    val exerciseComment: String?,
 )
 
 data class WeightPoint(val dateMillis: Long, val maxWeight: Double, val maxReps: Int)

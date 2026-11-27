@@ -18,6 +18,9 @@ val GymOnAccent = Color(0xFF0D1116)
 val GymDanger = Color(0xFFE06660)
 val GymDangerBorder = Color(0xFF7A3B3B)
 val GymPhoto = Color(0xFF2A2F38)
+// Оранжевый цвет информационных действий: используется только для иконки «i»,
+// акцент остаётся основным цветом.
+val GymInfo = Color(0xFFF79A3E)
 
 // Светлая тема — производная от той же схемы.
 val LightBg = Color(0xFFF4F5F7)
